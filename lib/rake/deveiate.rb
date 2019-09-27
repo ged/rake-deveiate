@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'pathname'
+require 'etc'
 
 begin
   gem 'rdoc'
@@ -27,13 +28,20 @@ require 'pastel'
 class Rake::DevEiate < Rake::TaskLib
 	include Rake::TraceOutput
 
+	# Pattern for extracting a version constant
+	VERSION_PATTERN = /VERSION\s*=\s*(?<quote>['"])(?<version>\d+(\.\d+){2}.*)\k<quote>/
 
+	# The version of this library
+	VERSION = '0.1.0'
+
+	# Paths
 	PROJECT_DIR = Pathname.pwd
 
 	DOCS_DIR = PROJECT_DIR + 'docs'
 	LIB_DIR = PROJECT_DIR + 'lib'
 	EXT_DIR = PROJECT_DIR + 'ext'
 	SPEC_DIR = PROJECT_DIR + 'spec'
+	CERTS_DIR = PROJECT_DIR + 'certs'
 
 	DEFAULT_MANIFEST_FILE = PROJECT_DIR + 'Manifest.txt'
 	DEFAULT_PROJECT_FILES =
@@ -63,11 +71,14 @@ class Rake::DevEiate < Rake::TaskLib
 
 		@manifest_file = DEFAULT_MANIFEST_FILE.dup
 		@project_files = self.read_manifest
+		@version       = self.find_version
 		@readme_file   = self.find_readme
 		@readme        = self.parse_readme( **options )
 		@title         = self.extract_default_title
 		@rdoc_files    = @project_files.dup
 		@rdoc_files.exclude( 'spec/**', 'data/**' )
+		@cert_files    = Rake::FileList[ CERTS_DIR + '*.pem' ]
+		@current_user  = Etc.getlogin
 
 		self.instance_exec( self, &block ) if block
 
@@ -84,6 +95,11 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The name of the gem the task will build
 	attr_reader :gemname
+
+	##
+	# The Gem::Version of the current library, extracted from the top-level
+	# namespace.
+	attr_reader :version
 
 	##
 	# The README of the project as an RDoc::Markup::Document
@@ -108,6 +124,14 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The files which should be used to generate documentation as a Rake::FileList
 	attr_reader :rdoc_files
+
+	##
+	# The public cetificates that can be used to verify signed gems
+	attr_reader :cert_files
+
+	##
+	# The username of the current user
+	attr_reader :current_user
 
 
 	#
@@ -185,10 +209,31 @@ class Rake::DevEiate < Rake::TaskLib
 	end
 
 
+	### Find the file that contains the VERSION constant and return it as a
+	### Gem::Version.
+	def find_version
+		version_file = LIB_DIR + "%s.rb" % [ self.gemname.gsub(/-/, '/') ]
+		raise "Version could not be read from %s" % [version_file] unless version_file.readable?
+
+		version_line = version_file.readlines.find {|l| l =~ VERSION_PATTERN } or
+			abort "Can't read the VERSION from #{version_file}!"
+		version = version_line[ VERSION_PATTERN, :version ] or
+			abort "Couldn't find a semantic version in %p" % [ version_line ]
+
+		return Gem::Version.new( version )
+	end
+
+
+	### Returns +true+ if the manifest file exists and is readable.
+	def has_manifest?
+		return self.manifest_file.readable?
+	end
+
+
 	### Read the manifest file if there is one, falling back to a default list if
 	### there isn't a manifest.
 	def read_manifest
-		if self.manifest_file.readable?
+		if self.has_manifest?
 			entries = self.manifest_file.readlines.map( &:chomp )
 			return Rake::FileList[ *entries ]
 		else
