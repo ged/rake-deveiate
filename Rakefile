@@ -9,8 +9,6 @@ require 'rspec/core/rake_task'
 $LOAD_PATH.unshift( 'lib' )
 require 'rake/deveiate'
 
-Rake::DevEiate.setup( 'rake-deveiate' ) do |gem|
-	gem.title = 'Rake Tasks for DevEiate Libraries'
-end
+Rake::DevEiate.setup( 'rake-deveiate' )
 
 
