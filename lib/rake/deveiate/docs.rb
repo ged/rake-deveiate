@@ -1,15 +1,25 @@
 # -*- ruby -*-
 # frozen_string_literal: true
 
+require 'rake'
+require 'rake/phony'
 require 'rdoc/task'
+
 require 'rake/deveiate' unless defined?( Rake::DevEiate )
 
 
 # Documentation-generation tasks
 module Rake::DevEiate::Docs
+	extend Rake::DSL
+
+
+	###############
+	module_function
+	###############
 
 	### Define documentation tasks
-	def self::define_tasks( tasklib )
+	def define_tasks( tasklib )
+		task :docs => :phony
 
 		RDoc::Task.new( 'docs' ) do |rdoc|
 			rdoc.main = tasklib.readme_file.to_s

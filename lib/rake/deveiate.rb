@@ -37,11 +37,12 @@ class Rake::DevEiate < Rake::TaskLib
 	# Paths
 	PROJECT_DIR = Pathname.pwd
 
-	DOCS_DIR = PROJECT_DIR + 'docs'
-	LIB_DIR = PROJECT_DIR + 'lib'
-	EXT_DIR = PROJECT_DIR + 'ext'
-	SPEC_DIR = PROJECT_DIR + 'spec'
-	CERTS_DIR = PROJECT_DIR + 'certs'
+	DOCS_DIR    = PROJECT_DIR + 'docs'
+	LIB_DIR     = PROJECT_DIR + 'lib'
+	EXT_DIR     = PROJECT_DIR + 'ext'
+	SPEC_DIR    = PROJECT_DIR + 'spec'
+	DATA_DIR    = PROJECT_DIR + 'data'
+	CERTS_DIR   = PROJECT_DIR + 'certs'
 
 	DEFAULT_MANIFEST_FILE = PROJECT_DIR + 'Manifest.txt'
 	DEFAULT_PROJECT_FILES =
@@ -73,12 +74,16 @@ class Rake::DevEiate < Rake::TaskLib
 		@project_files = self.read_manifest
 		@version       = self.find_version
 		@readme_file   = self.find_readme
-		@readme        = self.parse_readme( **options )
-		@title         = self.extract_default_title
+		@readme        = self.parse_readme
 		@rdoc_files    = @project_files.dup
-		@rdoc_files.exclude( 'spec/**', 'data/**' )
+		@rdoc_files.exclude( SPEC_DIR + '**', DATA_DIR + '**' )
 		@cert_files    = Rake::FileList[ CERTS_DIR + '*.pem' ]
 		@current_user  = Etc.getlogin
+
+		@docs_dir      = DOCS_DIR.dup
+
+		@title         = self.extract_default_title
+		@authors       = []
 
 		self.instance_exec( self, &block ) if block
 
@@ -209,6 +214,18 @@ class Rake::DevEiate < Rake::TaskLib
 	end
 
 
+	### Extract a summary from the README if possible. Returns +nil+ if not.
+	def extract_summary
+		return self.extract_description&.split( /(?<=\.)\s+/ ).first
+	end
+
+
+	### Extract a description from the README if possible. Returns +nil+ if not.
+	def extract_description
+		return self.readme&.parts.find {|part| part.is_a?(RDoc::Markup::Paragraph) }&.text
+	end
+
+
 	### Find the file that contains the VERSION constant and return it as a
 	### Gem::Version.
 	def find_version
@@ -268,7 +285,7 @@ class Rake::DevEiate < Rake::TaskLib
 
 
 	### Parse the README into an RDoc::Markup::Document and return it
-	def parse_readme( **options )
+	def parse_readme
 		case self.readme_file.extname
 		when '.md'
 			return RDoc::Markdown.parse( self.readme_file.read )
