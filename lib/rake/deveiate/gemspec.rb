@@ -48,13 +48,21 @@ module Rake::DevEiate::Gemspec
 	def make_gemspec( tasklib )
 		spec = Gem::Specification.new
 
-		spec.name        = tasklib.gemname
-		spec.summary     = tasklib.extract_summary || "A gem of some sort."
-		spec.description = tasklib.extract_description || spec.summary
-		spec.files       = tasklib.project_files
-		spec.signing_key = File.expand_path( "~/.gem/gem-private_key.pem" )
-		spec.cert_chain  = tasklib.cert_files
-		spec.version     = tasklib.version
+		spec.name         = tasklib.gemname
+		spec.summary      = tasklib.extract_summary || "A gem of some sort."
+		spec.description  = tasklib.extract_description || spec.summary
+		spec.files        = tasklib.project_files
+		spec.signing_key  = File.expand_path( "~/.gem/gem-private_key.pem" )
+		spec.cert_chain   = tasklib.cert_files
+		spec.version      = tasklib.version
+
+		tasklib.dependencies.each do |dep|
+			if dep.runtime?
+				spec.add_runtime_dependency( dep )
+			else
+				spec.add_development_dependency( dep )
+			end
+		end
 
 		return spec
 	end
@@ -67,6 +75,7 @@ module Rake::DevEiate::Gemspec
 
 		spec.version     = self.prerelease_version( tasklib )
 		spec.signing_key = nil
+		spec.cert_chain  = []
 
 		return spec
 	end

@@ -22,6 +22,7 @@ require 'rdoc/markdown'
 require 'tty/prompt'
 require 'tty/table'
 require 'pastel'
+require 'rubygems/request_set'
 
 
 # A task library for maintaining an open-source library.
@@ -47,6 +48,13 @@ class Rake::DevEiate < Rake::TaskLib
 	DEFAULT_MANIFEST_FILE = PROJECT_DIR + 'Manifest.txt'
 	DEFAULT_PROJECT_FILES =
 		Rake::FileList[ "*.rdoc", "*.md", "lib/*.rb", "lib/**/*.rb", "ext/**/*.[ch]" ]
+
+	# The file that contains the project's dependencies
+	GEMDEPS_FILE = PROJECT_DIR + 'gem.deps.rb'
+
+
+	# Autoload utility classes
+	autoload :GemDepFinder, 'rake/deveiate/gem_dep_finder'
 
 
 	### Declare an attribute that should be cast to a Pathname when set.
@@ -84,6 +92,7 @@ class Rake::DevEiate < Rake::TaskLib
 
 		@title         = self.extract_default_title
 		@authors       = []
+		@dependencies  = self.find_dependencies
 
 		self.instance_exec( self, &block ) if block
 
@@ -138,6 +147,15 @@ class Rake::DevEiate < Rake::TaskLib
 	# The username of the current user
 	attr_reader :current_user
 
+	##
+	# The gem's authors in the form of strings in the format: `Name <email>`
+	attr_reader :authors
+
+	##
+	# The Gem::RequestSet that describes the gem's dependencies
+	attr_reader :dependencies
+
+
 
 	#
 	# Task definition
@@ -155,7 +173,11 @@ class Rake::DevEiate < Rake::TaskLib
 		task( :debug ) do
 			self.prompt.say( self.pastel.headline "Project files:" )
 			table = self.generate_project_files_table
-			self.prompt.say( table )
+			self.prompt.say( table.render(:unicode) )
+
+			self.prompt.say( self.pastel.headline "Dependencies" )
+			table = self.generate_dependencies_table
+			self.prompt.say( table.render(:unicode) )
 		end
 	end
 
@@ -196,6 +218,7 @@ class Rake::DevEiate < Rake::TaskLib
 			pastel.alias_color( :headline, :bold, :white, :on_black )
 			pastel.alias_color( :success, :bold, :green )
 			pastel.alias_color( :error, :bold, :red )
+			pastel.alias_color( :warning, :yellow )
 			pastel.alias_color( :added, :green )
 			pastel.alias_color( :removed, :red )
 			pastel.alias_color( :prompt, :cyan )
@@ -280,7 +303,16 @@ class Rake::DevEiate < Rake::TaskLib
 			rows: columns.transpose,
 		)
 
-		return table.render( :unicode )
+		return table
+	end
+
+
+	### Generate a TTY::Table from the current dependency list and return it.
+	def generate_dependencies_table
+		table = TTY::Table.new( header: ['Gem', 'Version', 'Dev'] )
+		self.dependencies.specs.each do |spec|
+			table << [ spec.name, spec.version]
+		end
 	end
 
 
@@ -297,10 +329,18 @@ class Rake::DevEiate < Rake::TaskLib
 	end
 
 
+	### Load the gemdeps file if it exists, and return a Gem::RequestSet with the
+	### regular dependencies contained in it.
+	def find_dependencies
+		finder = Rake::DevEiate::GemDepFinder.new( GEMDEPS_FILE )
+		finder.load
+		return finder.dependencies
+	end
+
+
 	#######
 	private
 	#######
-
 
 	### Output +args+ to $stderr if tracing is enabled.
 	def trace( *args )
