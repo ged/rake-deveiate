@@ -214,7 +214,7 @@ module Rake::DevEiate::Hg
 		paths = self.hg.paths
 		if origin_url = paths[:default]
 			if self.prompt.yes?( "Pull and update from '#{origin_url}'?" )
-				self.hg.pull( update: true )
+				self.hg.pull_update
 			end
 		else
 			trace "Skipping pull: No 'default' path."
