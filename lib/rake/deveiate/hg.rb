@@ -1,274 +1,87 @@
 # -*- ruby -*-
 # frozen_string_literal: true
 
+require 'shellwords'
 require 'hglib'
-require 'rake'
+require 'tty/editor'
+
 require 'rake/deveiate' unless defined?( Rake::DevEiate )
 
 
 # Version-control tasks
 module Rake::DevEiate::Hg
-	extend Rake::DSL
-
 
 	# The name of the file to edit for the commit message
-	COMMIT_MSG_FILE = 'commit-msg.txt'
+	COMMIT_MSG_FILE = Pathname( 'commit-msg.txt' )
 
+	# The name of the ignore file
+	IGNORE_FILE = Rake::DevEiate::PROJECT_DIR + '.hgignore'
 
-	module MercurialHelpers
-		include FileUtils
-		include FileUtils::DryRun if Rake.application.options.dryrun
+	# Colors for presenting file statuses
+	STATUS_COLORS = {
+		'M' => [:blue],                  # modified
+		'A' => [:bold, :green],          # added
+		'R' => [:bold, :black],          # removed
+		'C' => [:white],                 # clean
+		'!' => [:bold, :white, :on_red], # missing
+		'?' => [:yellow],                # not tracked
+		'I' => [:dim, :white],           # ignored
+	}
 
-		# The name of the ignore file
-		IGNORE_FILE = Pathname( '.hgignore' )
+	# File indentation
+	FILE_INDENT = " • "
 
-
-		### Generate a commit log from a diff and return it as a String. At the moment it just
-		### returns the diff as-is, but will (someday) do something better.
-		def make_commit_log
-			diff = read_command_output( 'hg', 'diff' )
-			fail "No differences." if diff.empty?
-
-			return diff
-		end
-
-
-		### Generate a commit log and invoke the user's editor on it.
-		def edit_commit_log( logfile )
-			diff = make_commit_log()
-
-			File.open( logfile, 'w' ) do |fh|
-				fh.print( diff )
-			end
-
-			edit( logfile )
-		end
-
-
-		### Generate a changelog.
-		def make_changelog
-			log = read_command_output( 'hg', 'log', '--style', 'changelog' )
-			return log
-		end
-
-
-		def get_manifest
-			raw = read_command_output( 'hg', 'manifest' )
-			return raw.split( $/ )
-		end
-
-
-		### Get the 'tip' info and return it as a Hash
-		def get_tip_info
-			data = read_command_output( 'hg', 'tip' )
-			return YAML.load( data )
-		end
-
-
-		### Return the ID for the current rev
-		def get_current_rev
-			id = read_command_output( 'hg', '-q', 'identify' )
-			return id.chomp
-		end
-
-
-		### Return the current numeric (local) rev number
-		def get_numeric_rev
-			id = read_command_output( 'hg', '-q', 'identify', '-n' )
-			return id.chomp[ /^(\d+)/, 1 ] || '0'
-		end
-
-
-		### Read the list of existing tags and return them as an Array
-		def get_tags
-			taglist = read_command_output( 'hg', 'tags' )
-			return taglist.split( /\n/ ).collect {|tag| tag[/^\S+/] }
-		end
-
-
-		### Read any remote repo paths known by the current repo and return them as a hash.
-		def get_repo_paths
-			paths = {}
-			pathspec = read_command_output( 'hg', 'paths' )
-			pathspec.split.each_slice( 3 ) do |name, _, url|
-				paths[ name ] = url
-			end
-			return paths
-		end
-
-
-		### Return the list of files which are not of status 'clean'
-		def get_uncommitted_files
-			self.repo.
-			list = read_command_output( 'hg', 'status', '-n', '--color', 'never' )
-			list = list.split( /\n/ )
-
-			trace "Changed files: %p" % [ list ]
-			return list
-		end
-
-
-		### Return the list of files which are of status 'unknown'
-		def get_unknown_files
-			list = read_command_output( 'hg', 'status', '-un', '--color', 'never' )
-			list = list.split( /\n/ )
-
-			trace "New files: %p" % [ list ]
-			return list
-		end
-
-
-		### Add the list of +pathnames+ to the .hgignore list.
-		def hg_ignore_files( *pathnames )
-			patterns = pathnames.flatten.collect do |path|
-				'^' + Regexp.escape(path) + '$'
-			end
-			trace "Ignoring %d files." % [ pathnames.length ]
-
-			IGNORE_FILE.open( File::CREAT|File::WRONLY|File::APPEND, 0644 ) do |fh|
-				fh.puts( patterns )
-			end
-		end
-
-
-		### Delete the files in the given +filelist+ after confirming with the user.
-		def delete_extra_files( filelist )
-			description = humanize_file_list( filelist, '	 ' )
-			log "Files to delete:\n ", description
-			ask_for_confirmation( "Really delete them?", false ) do
-				filelist.each do |f|
-					rm_rf( f, :verbose => true )
-				end
-			end
-		end
-
-	end # module MercurialHelpers
-
-
-	###############
-	module_function
-	###############
 
 	### Define version-control tasks
-	def define_tasks( tasklib )
+	def define_tasks
+		super if defined?( super )
 
-		file COMMIT_MSG_FILE do |task|
+		file COMMIT_MSG_FILE.to_s do |task|
 			edit_commit_log( task.name )
 		end
+
+		CLEAN.include( COMMIT_MSG_FILE.to_s )
 
 		namespace :hg do
 
 			desc "Prepare for a new release"
-			task( :prep_release, &method(:prep_release) )
-
+			task( :prep_release, &method(:do_prep_release) )
 
 			desc "Check for new files and offer to add/ignore/delete them."
-			task :newfiles do
-				log "Checking for new files..."
-
-				entries = get_unknown_files()
-
-				unless entries.empty?
-					files_to_add = []
-					files_to_ignore = []
-					files_to_delete = []
-
-					entries.each do |entry|
-						action = prompt_with_default( "	 #{entry}: (a)dd, (i)gnore, (s)kip (d)elete", 's' )
-						case action
-						when 'a'
-							files_to_add << entry
-						when 'i'
-							files_to_ignore << entry
-						when 'd'
-							files_to_delete << entry
-						end
-					end
-
-					unless files_to_add.empty?
-						run 'hg', 'add', *files_to_add
-					end
-
-					unless files_to_ignore.empty?
-						hg_ignore_files( *files_to_ignore )
-					end
-
-					unless files_to_delete.empty?
-						delete_extra_files( files_to_delete )
-					end
-				end
-			end
+			task( :newfiles, &method(:do_newfiles) )
 			task :add => :newfiles
 
-
 			desc "Pull and update from the default repo"
-			task :pull do
-				paths = get_repo_paths()
-				if origin_url = paths['default']
-					ask_for_confirmation( "Pull and update from '#{origin_url}'?", false ) do
-						Rake::Task['hg:pull_without_confirmation'].invoke
-					end
-				else
-					trace "Skipping pull: No 'default' path."
-				end
-			end
-
+			task( :pull, &method(:do_pull) )
 
 			desc "Pull and update without confirmation"
-			task :pull_without_confirmation do
-				run 'hg', 'pull', '-u'
-			end
-
+			task( :pull_without_confirmation, &method(:do_pull_without_confirmation) )
 
 			desc "Update to tip"
-			task :update do
-				run 'hg', 'update'
-			end
-
+			task( :update, &method(:do_update) )
 
 			desc "Clobber all changes (hg up -C)"
-			task :update_and_clobber do
-				run 'hg', 'update', '-C'
-			end
-
+			task( :update_and_clobber, &method(:do_update_and_clobber) )
 
 			task :precheckin do
 				trace "Pre-checkin hooks"
 			end
 
-
 			desc "Check the current code in if tests pass"
-			task :checkin => [:pull, :newfiles, :precheckin, COMMIT_MSG_FILE] do
-				targets = get_target_args()
-				$stderr.puts '---', File.read( COMMIT_MSG_FILE ), '---'
-				ask_for_confirmation( "Continue with checkin?" ) do
-					run 'hg', 'ci', '-l', COMMIT_MSG_FILE, targets
-					rm_f COMMIT_MSG_FILE
-				end
-				Rake::Task['hg:push'].invoke
-			end
+			task( :checkin => [:pull, :newfiles, :precheckin, COMMIT_MSG_FILE.to_s], &method(:do_checkin) )
 			task :commit => :checkin
 			task :ci => :checkin
 
-			CLEAN.include( COMMIT_MSG_FILE )
-
 			desc "Push to the default origin repo (if there is one)"
-			task :push do
-				paths = get_repo_paths()
-				if origin_url = paths['default']
-					ask_for_confirmation( "Push to '#{origin_url}'?", false ) do
-						Rake::Task['hg:push_without_confirmation'].invoke
-					end
-				else
-					trace "Skipping push: No 'default' path."
-				end
-			end
+			task( :push, &method(:do_push) )
 
 			desc "Push to the default repo without confirmation"
-			task :push_without_confirmation do
-				run 'hg', 'push'
+			task :push_without_confirmation do |task, args|
+				self.hg.push
 			end
+
 		end
+
 
 		# Add a top-level 'ci' task for checkin
 		desc "Check in your changes"
@@ -279,7 +92,7 @@ module Rake::DevEiate::Hg
 
 		desc "Check the history file to ensure it contains an entry for each release tag"
 		task :check_history do
-			log "Checking history..."
+			self.prompt.say "Checking history..."
 			missing_tags = get_unhistoried_version_tags()
 
 			unless missing_tags.empty?
@@ -294,20 +107,38 @@ module Rake::DevEiate::Hg
 	end
 
 
-	### The body of the hg:prep_release task.
-	def prep_release
-		uncommitted_files = get_uncommitted_files()
-		unless uncommitted_files.empty?
-			log "Uncommitted files:\n",
-				*uncommitted_files.map {|fn| "	#{fn}\n" }
-			ask_for_confirmation( "\nRelease anyway?", true ) do
-				log "Okay, releasing with uncommitted versions."
-			end
+	### Given a +status_hash+ like that returned by Hglib::Repo.status, return a
+	### string description of the files and their status.
+	def show_file_statuses( statuses )
+		lines = statuses.map do |entry|
+			status_color = STATUS_COLORS[ entry.status ]
+			"	%s: %s" % [
+				self.pastel.white( entry.path.to_s ),
+				self.pastel.decorate( entry.status_description, *status_color ),
+			]
 		end
 
-		tags = get_tags()
+		self.prompt.say( self.pastel.headline "Uncommitted files:" )
+		self.prompt.say( lines.join("\n") )
+	end
+
+
+	### The body of the hg:prep_release task.
+	def do_prep_release( task, args )
+		uncommitted_files = self.hg.status( n: true )
+		unless uncommitted_files.empty?
+			self.show_file_statuses( uncommitted_files )
+
+			fail unless self.prompt.yes?( "Release anyway?" ) do |q|
+				q.default( false )
+			end
+
+			self.prompt.warn "Okay, releasing with uncommitted versions."
+		end
+
 		rev = get_current_rev()
 		pkg_version_tag = "#{hg_release_tag_prefix}#{version}"
+		tags = get_tags()
 
 		# Look for a tag for the current release version, and if it exists abort
 		if tags.include?( pkg_version_tag )
@@ -320,12 +151,12 @@ module Rake::DevEiate::Hg
 
 		# Sign the current rev
 		if self.hg_sign_tags
-			log "Signing rev #{rev}"
+			self.prompt.say "Signing rev #{rev}"
 			run 'hg', 'sign'
 		end
 
 		# Tag the current rev
-		log "Tagging rev #{rev} as #{pkg_version_tag}"
+		self.prompt.say "Tagging rev #{rev} as #{pkg_version_tag}"
 		run 'hg', 'tag', pkg_version_tag
 
 		# Offer to push
@@ -333,9 +164,121 @@ module Rake::DevEiate::Hg
 	end
 
 
+	### The body of the hg:newfiles task.
+	def do_newfiles( task, args )
+		self.prompt.say "Checking for new files..."
+
+		entries = self.hg.status( no_status: true, unknown: true )
+
+		unless entries.empty?
+			files_to_add = []
+			files_to_ignore = []
+			files_to_delete = []
+
+			entries.each do |entry|
+				description = "  %s: %s" % [ entry.path, entry.status_description ]
+				action = self.prompt.select( description ) do |menu|
+					menu.choice "add", :a
+					menu.choice "ignore", :i
+					menu.choice "skip", :s
+					menu.choice "delete", :d
+				end
+
+				case action
+				when :a
+					files_to_add << entry.path
+				when :i
+					files_to_ignore << entry.path
+				when :d
+					files_to_delete << entry.path
+				end
+			end
+
+			unless files_to_add.empty?
+				self.hg.add( *files_to_add )
+			end
+
+			unless files_to_ignore.empty?
+				hg_ignore_files( *files_to_ignore )
+			end
+
+			unless files_to_delete.empty?
+				delete_extra_files( *files_to_delete )
+			end
+		end
+	end
+
+
+	### The body of the hg:pull task.
+	def do_pull( task, args )
+		paths = self.hg.paths
+		if origin_url = paths[:default]
+			if self.prompt.yes?( "Pull and update from '#{origin_url}'?" )
+				self.hg.pull( update: true )
+			end
+		else
+			trace "Skipping pull: No 'default' path."
+		end
+	end
+
+
+	### The body of the hg:pull_without_confirmation task.
+	def do_pull_without_confirmation( task, args )
+		run 'hg', 'pull', '-u'
+	end
+
+
+	### The body of the hg:update task.
+	def do_update( task, args )
+		run 'hg', 'update'
+	end
+
+
+	### The body of the hg:update_and_clobber task.
+	def do_update_and_clobber( task, args )
+		run 'hg', 'update', '-C'
+	end
+
+
+	### The body of the checkin task.
+	def do_checkin( task, args )
+		targets = args.extras
+		self.prompt.say( self.pastel.cyan( "---\n", COMMIT_MSG_FILE.read, "---\n" ) )
+		if self.prompt.yes?( "Continue with checkin?" )
+			self.hg.commit( *targets, logfile: COMMIT_MSG_FILE.to_s )
+			rm_f COMMIT_MSG_FILE
+		end
+		Rake::Task[ 'hg:push' ].invoke
+	end
+
+
+	### The body of the push task.
+	def do_push( task, args )
+		paths = self.hg.paths
+		if origin_url = paths[:default]
+			if self.prompt.yes?( "Push to '#{origin_url}'?" ) {|q| q.default(false) }
+				self.hg.push
+			end
+		else
+			trace "Skipping push: No 'default' path."
+		end
+	end
+
+
+	#
+	# utility methods
+	#
+
 	attr_accessor :hg_release_tag_prefix
 	attr_accessor :hg_sign_tags
 	attr_accessor :check_history_on_release
+
+
+	### Return an Hglib::Repo for the directory rake was invoked in, creating it if
+	### necessary.
+	def hg
+		@hg ||= Hglib.repo( Rake::DevEiate::PROJECT_DIR )
+	end
 
 
 	### Set up defaults
@@ -372,6 +315,55 @@ module Rake::DevEiate::Hg
 		return release_tags
 	end
 
+
+	### Generate a commit log and invoke the user's editor on it.
+	def edit_commit_log( logfile )
+		diff = self.hg.diff
+
+		File.open( logfile, 'w' ) do |fh|
+			fh.print( diff )
+		end
+
+		TTY::Editor.open( logfile )
+	end
+
+
+	### Add the list of +pathnames+ to the .hgignore list.
+	def hg_ignore_files( *pathnames )
+		patterns = pathnames.flatten.collect do |path|
+			'^' + Regexp.escape(path) + '$'
+		end
+		self.trace "Ignoring %d files." % [ pathnames.length ]
+
+		IGNORE_FILE.open( File::CREAT|File::WRONLY|File::APPEND, 0644 ) do |fh|
+			fh.puts( patterns )
+		end
+	end
+
+
+	### Delete the files in the given +filelist+ after confirming with the user.
+	def delete_extra_files( *filelist )
+		description = humanize_file_list( filelist, '	 ' )
+		self.prompt.say "Files to delete:"
+		self.prompt.say( description )
+
+		if self.prompt.yes?( "Really delete them?" ) {|q| q.default(false) }
+			filelist.each do |f|
+				rm_rf( f, verbose: true )
+			end
+		end
+	end
+
+
+	### Returns a human-scannable file list by joining and truncating the list if it's too long.
+	def humanize_file_list( list, indent=FILE_INDENT )
+		listtext = list[0..5].join( "\n#{indent}" )
+		if list.length > 5
+			listtext << " (and %d other/s)" % [ list.length - 5 ]
+		end
+
+		return listtext
+	end
 
 
 end # module Rake::DevEiate::Hg

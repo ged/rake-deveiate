@@ -9,7 +9,8 @@ require 'rake/deveiate' unless defined?( Rake::DevEiate )
 module Rake::DevEiate::Specs
 
 	### Define documentation tasks
-	def self::define_tasks( tasklib )
+	def define_tasks
+		super if defined?( super )
 
 		RSpec::Core::RakeTask.new( :spec ) do |t|
 			t.rspec_opts = "-cfd"

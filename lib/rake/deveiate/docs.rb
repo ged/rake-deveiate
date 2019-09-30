@@ -13,19 +13,17 @@ module Rake::DevEiate::Docs
 	extend Rake::DSL
 
 
-	###############
-	module_function
-	###############
-
 	### Define documentation tasks
-	def define_tasks( tasklib )
+	def define_tasks
+		super if defined?( super )
+
 		task :docs => :phony
 
 		RDoc::Task.new( 'docs' ) do |rdoc|
-			rdoc.main = tasklib.readme_file.to_s
-			rdoc.rdoc_files = tasklib.rdoc_files
+			rdoc.main = self.readme_file.to_s
+			rdoc.rdoc_files = self.rdoc_files
 			rdoc.generator = :fivefish
-			rdoc.title = tasklib.title
+			rdoc.title = self.title
 			rdoc.rdoc_dir = Rake::DevEiate::DOCS_DIR.to_s
 		end
 

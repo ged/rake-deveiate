@@ -17,6 +17,7 @@ end unless defined?(Rake)
 
 require 'rake'
 require 'rake/tasklib'
+require 'rake/clean'
 require 'rdoc'
 require 'rdoc/markdown'
 require 'tty/prompt'
@@ -35,6 +36,9 @@ class Rake::DevEiate < Rake::TaskLib
 	# The version of this library
 	VERSION = '0.1.0'
 
+	# The server to release to by default
+	DEFAULT_GEMSERVER = 'https://rubygems.org/'
+
 	# Paths
 	PROJECT_DIR = Pathname.pwd
 
@@ -46,12 +50,26 @@ class Rake::DevEiate < Rake::TaskLib
 	CERTS_DIR   = PROJECT_DIR + 'certs'
 
 	DEFAULT_MANIFEST_FILE = PROJECT_DIR + 'Manifest.txt'
-	DEFAULT_PROJECT_FILES =
-		Rake::FileList[ "*.rdoc", "*.md", "lib/*.rb", "lib/**/*.rb", "ext/**/*.[ch]" ]
+	DEFAULT_PROJECT_FILES = Rake::FileList[
+		'*.{rdoc,md,txt}',
+		'bin/*',
+		'lib/**.rb',
+		'ext/**.[ch]',
+		'data/**'
+	]
 
 	# The file that contains the project's dependencies
 	GEMDEPS_FILE = PROJECT_DIR + 'gem.deps.rb'
 
+	# The file suffixes to include in documentation
+	DOCUMENTATION_SUFFIXES = %w[
+		.rb
+		.c
+		.h
+		.md
+		.rdoc
+		.txt
+	]
 
 	# Autoload utility classes
 	autoload :GemDepFinder, 'rake/deveiate/gem_dep_finder'
@@ -83,8 +101,7 @@ class Rake::DevEiate < Rake::TaskLib
 		@version       = self.find_version
 		@readme_file   = self.find_readme
 		@readme        = self.parse_readme
-		@rdoc_files    = @project_files.dup
-		@rdoc_files.exclude( SPEC_DIR + '**', DATA_DIR + '**' )
+		@rdoc_files    = self.make_rdoc_filelist
 		@cert_files    = Rake::FileList[ CERTS_DIR + '*.pem' ]
 		@current_user  = Etc.getlogin
 
@@ -94,11 +111,12 @@ class Rake::DevEiate < Rake::TaskLib
 		@authors       = []
 		@dependencies  = self.find_dependencies
 
-		self.instance_exec( self, &block ) if block
+		@gemserver     = DEFAULT_GEMSERVER
 
-		self.define_default_task
-		self.define_debug_tasks
 		self.load_task_libraries
+		self.define_tasks
+
+		self.instance_exec( self, &block ) if block
 	end
 
 
@@ -155,16 +173,56 @@ class Rake::DevEiate < Rake::TaskLib
 	# The Gem::RequestSet that describes the gem's dependencies
 	attr_reader :dependencies
 
+	##
+	# The gemserver to push gems to
+	attr_accessor :gemserver
 
 
 	#
 	# Task definition
 	#
 
+	### Load the deveiate task libraries.
+	def load_task_libraries
+		taskdir = Pathname( __FILE__.delete_suffix('.rb') )
+		tasklibs = Rake::FileList[ taskdir + '*.rb' ].pathmap( '%-2d/%n' )
+
+		self.trace( "Loading task libs: %p" % [ tasklibs ] )
+		tasklibs.each do |lib|
+			require( lib )
+		end
+
+		self.class.constants.
+			map {|c| self.class.const_get(c) }.
+			select {|c| c.respond_to?(:instance_methods) }.
+			select {|c| c.instance_methods(false).include?(:define_tasks) }.
+			each do |mod|
+				self.trace "Loading tasks from %p" % [ mod ]
+				extend( mod )
+			end
+	end
+
+
+	### Task-definition hook.
+	def define_tasks
+		self.define_default_tasks
+		self.define_debug_tasks
+
+		super if defined?( super )
+	end
+
+
 	### Set up a simple default task
-	def define_default_task
+	def define_default_tasks
 		desc "The task that runs by default"
 		task( :default => :spec )
+
+		task :release => [:prerelease, :release_gem, :postrelease]
+
+		# Empty here; hooked by the task libraries
+		task :prerelease
+		task :release_gem
+		task :postrelease
 	end
 
 
@@ -173,31 +231,26 @@ class Rake::DevEiate < Rake::TaskLib
 		task( :debug ) do
 			self.prompt.say( self.pastel.headline "Project files:" )
 			table = self.generate_project_files_table
-			self.prompt.say( table.render(:unicode) )
+			if table.empty?
+				self.prompt.warn( "None." )
+			else
+				self.prompt.say( table.render(:unicode, padding: [0,1]) )
+			end
+			self.prompt.say( "\n" )
 
 			self.prompt.say( self.pastel.headline "Dependencies" )
 			table = self.generate_dependencies_table
-			self.prompt.say( table.render(:unicode) )
-		end
-	end
-
-
-	### Load the deveiate task libraries.
-	def load_task_libraries
-		taskdir = Pathname( __FILE__.delete_suffix('.rb') )
-		tasklibs = Rake::FileList[ taskdir + '*.rb' ].pathmap( '%-2d/%n' )
-
-		trace( "Loading task libs: %p" % [ tasklibs ] )
-		tasklibs.each do |lib|
-			require( lib )
-		end
-
-		self.class.constants.
-			map {|c| self.class.const_get(c) }.
-			select {|c| c.respond_to?(:define_tasks) }.
-			each do |mod|
-				mod.define_tasks( self )
+			if table.empty?
+				self.prompt.warn( "None." )
+			else
+				self.prompt.say( table.render(:unicode, padding: [0,1]) )
 			end
+			self.prompt.say( "\n" )
+
+			self.prompt.say( self.pastel.headline "Will push releases to:" )
+			self.prompt.say( "  #{self.gemserver}" )
+			self.prompt.say( "\n" )
+		end
 	end
 
 
@@ -226,6 +279,12 @@ class Rake::DevEiate < Rake::TaskLib
 			pastel.alias_color( :odd_row, :reset )
 			pastel
 		end
+	end
+
+
+	### Output +args+ to $stderr if tracing is enabled.
+	def trace( *args )
+		Rake.application.trace( *args ) if Rake.application.options.trace
 	end
 
 
@@ -277,11 +336,24 @@ class Rake::DevEiate < Rake::TaskLib
 			entries = self.manifest_file.readlines.map( &:chomp )
 			return Rake::FileList[ *entries ]
 		else
-			warn "No manifest (%s): falling back to a default list" % [ self.manifest_file ]
+			self.prompt.warn "No manifest (%s): falling back to a default list" %
+				[ self.manifest_file ]
 			return DEFAULT_PROJECT_FILES.dup
 		end
 	end
 
+
+	### Make a Rake::FileList of the files that should be used to generate
+	### documentation.
+	def make_rdoc_filelist
+		list = self.project_files.dup
+
+		list.exclude do |fn|
+			fn =~ %r:^(spec|data)/: || !fn.end_with?( *DOCUMENTATION_SUFFIXES )
+		end
+
+		return list
+	end
 
 	### Find the README file in the list of project files and return it as a
 	### Pathname.
@@ -298,8 +370,16 @@ class Rake::DevEiate < Rake::TaskLib
 			self.project_files.sort,
 			self.rdoc_files.sort
 		]
+
+		max_length = columns.map( &:length ).max
+		columns.each do |col|
+			self.trace "Filling out columns %d-%d" % [ col.length, max_length ]
+			next if col.length == max_length
+			col.fill( '', col.length .. max_length - 1 )
+		end
+
 		table = TTY::Table.new(
-			header: ['Project', 'Docs'],
+			header: ['Project', 'Documentation'],
 			rows: columns.transpose,
 		)
 
@@ -309,10 +389,13 @@ class Rake::DevEiate < Rake::TaskLib
 
 	### Generate a TTY::Table from the current dependency list and return it.
 	def generate_dependencies_table
-		table = TTY::Table.new( header: ['Gem', 'Version', 'Dev'] )
-		self.dependencies.specs.each do |spec|
-			table << [ spec.name, spec.version]
+		table = TTY::Table.new( header: ['Gem', 'Version', 'Type'] )
+
+		self.dependencies.each do |dep|
+			table << [ dep.name, dep.requirement.to_s, dep.type ]
 		end
+
+		return table
 	end
 
 
@@ -332,6 +415,12 @@ class Rake::DevEiate < Rake::TaskLib
 	### Load the gemdeps file if it exists, and return a Gem::RequestSet with the
 	### regular dependencies contained in it.
 	def find_dependencies
+		unless GEMDEPS_FILE.readable?
+			self.prompt.warn "Deps file (%s) is missing or unreadable, assuming no dependencies." %
+				[ GEMDEPS_FILE ]
+			return []
+		end
+
 		finder = Rake::DevEiate::GemDepFinder.new( GEMDEPS_FILE )
 		finder.load
 		return finder.dependencies
@@ -341,12 +430,6 @@ class Rake::DevEiate < Rake::TaskLib
 	#######
 	private
 	#######
-
-	### Output +args+ to $stderr if tracing is enabled.
-	def trace( *args )
-		Rake.application.trace( *args ) if Rake.application.options.trace
-	end
-
 
 	### Ensure the given +gemname+ is valid, raising if it isn't.
 	def validate_gemname( gemname )

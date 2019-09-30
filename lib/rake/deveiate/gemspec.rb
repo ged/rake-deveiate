@@ -12,25 +12,23 @@ module Rake::DevEiate::Gemspec
 	extend Rake::DSL
 
 
-	###############
-	module_function
-	###############
-
 	### Define gemspec tasks
-	def define_tasks( tasklib )
-		gemspec_file = "#{tasklib.gemname}.gemspec"
+	def define_tasks
+		super if defined?( super )
 
-		if tasklib.has_manifest?
-			file( tasklib.manifest_file )
-			file( gemspec_file => tasklib.manifest_file )
+		gemspec_file = "#{self.gemname}.gemspec"
+
+		if self.has_manifest?
+			file( self.manifest_file )
+			file( gemspec_file => self.manifest_file )
 		else
 			file( gemspec_file )
 		end
 
 		task( gemspec_file ) do |task|
-			tasklib.prompt.say "Updating gemspec"
+			self.prompt.say "Updating gemspec"
 
-			spec = self.make_prerelease_gemspec( tasklib )
+			spec = self.make_prerelease_gemspec
 
 			File.open( task.name, 'w' ) do |fh|
 				fh.write( spec.to_ruby )
@@ -45,18 +43,18 @@ module Rake::DevEiate::Gemspec
 
 
 	### Return a Gem::Specification created from the project's metadata.
-	def make_gemspec( tasklib )
+	def make_gemspec
 		spec = Gem::Specification.new
 
-		spec.name         = tasklib.gemname
-		spec.summary      = tasklib.extract_summary || "A gem of some sort."
-		spec.description  = tasklib.extract_description || spec.summary
-		spec.files        = tasklib.project_files
+		spec.name         = self.gemname
+		spec.summary      = self.extract_summary || "A gem of some sort."
+		spec.description  = self.extract_description || spec.summary
+		spec.files        = self.project_files
 		spec.signing_key  = File.expand_path( "~/.gem/gem-private_key.pem" )
-		spec.cert_chain   = tasklib.cert_files
-		spec.version      = tasklib.version
+		spec.cert_chain   = self.cert_files
+		spec.version      = self.version
 
-		tasklib.dependencies.each do |dep|
+		self.dependencies.each do |dep|
 			if dep.runtime?
 				spec.add_runtime_dependency( dep )
 			else
@@ -70,10 +68,10 @@ module Rake::DevEiate::Gemspec
 
 	### Return a Gem::Specification with its properties modified to be suitable for
 	### a pre-release gem.
-	def make_prerelease_gemspec( tasklib )
-		spec = self.make_gemspec( tasklib )
+	def make_prerelease_gemspec
+		spec = self.make_gemspec
 
-		spec.version     = self.prerelease_version( tasklib )
+		spec.version     = self.prerelease_version
 		spec.signing_key = nil
 		spec.cert_chain  = []
 
@@ -82,8 +80,8 @@ module Rake::DevEiate::Gemspec
 
 
 	### Return a version string 
-	def prerelease_version( tasklib )
-		return "#{tasklib.version.bump}.0.pre.#{Time.now.strftime("%Y%m%d%H%M%S")}"
+	def prerelease_version
+		return "#{self.version.bump}.0.pre.#{Time.now.strftime("%Y%m%d%H%M%S")}"
 	end
 
 
