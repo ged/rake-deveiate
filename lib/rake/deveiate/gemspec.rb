@@ -4,12 +4,16 @@
 require 'etc'
 require 'rubygems'
 require 'rake'
+require 'rake/clean'
 require 'rake/deveiate' unless defined?( Rake::DevEiate )
 
 
 # Gemspec-generation tasks
 module Rake::DevEiate::Gemspec
 	extend Rake::DSL
+
+	# Pattern for splitting parsed authors list items into name and email
+	AUTHOR_PATTERN = /^(?<name>.*)\s<(?<email>.*)>$/
 
 
 	### Define gemspec tasks
@@ -38,7 +42,7 @@ module Rake::DevEiate::Gemspec
 		desc "(Re)Generate the gemspec file"
 		task :gemspec => gemspec_file
 
-		CLOBBER.include( gemspec_file.to_s )
+		CLEAN.include( gemspec_file.to_s )
 	end
 
 
@@ -53,6 +57,19 @@ module Rake::DevEiate::Gemspec
 		spec.signing_key  = File.expand_path( "~/.gem/gem-private_key.pem" )
 		spec.cert_chain   = self.cert_files
 		spec.version      = self.version
+		spec.licenses     = self.licenses
+		spec.date         = Date.today
+
+		self.authors.each do |author|
+			if ( m = author.match(AUTHOR_PATTERN) )
+				spec.authors ||= []
+				spec.authors << m[:name]
+				spec.email ||= []
+				spec.email << m[:email] if m[:email]
+			else
+				self.prompt.warn "Couldn't extract author name + email from %p" % [ author ]
+			end
+		end
 
 		self.dependencies.each do |dep|
 			if dep.runtime?

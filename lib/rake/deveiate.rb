@@ -40,7 +40,7 @@ class Rake::DevEiate < Rake::TaskLib
 	DEFAULT_GEMSERVER = 'https://rubygems.org/'
 
 	# Paths
-	PROJECT_DIR = Pathname.pwd
+	PROJECT_DIR = Pathname( '.' )
 
 	DOCS_DIR    = PROJECT_DIR + 'docs'
 	LIB_DIR     = PROJECT_DIR + 'lib'
@@ -50,6 +50,8 @@ class Rake::DevEiate < Rake::TaskLib
 	CERTS_DIR   = PROJECT_DIR + 'certs'
 
 	DEFAULT_MANIFEST_FILE = PROJECT_DIR + 'Manifest.txt'
+	DEFAULT_README_FILE = PROJECT_DIR + 'README.md'
+	DEFAULT_HISTORY_FILE = PROJECT_DIR + 'History.md'
 	DEFAULT_PROJECT_FILES = Rake::FileList[
 		'*.{rdoc,md,txt}',
 		'bin/*',
@@ -57,6 +59,9 @@ class Rake::DevEiate < Rake::TaskLib
 		'ext/**.[ch]',
 		'data/**'
 	]
+
+	# The default license for the project in SPDX form: https://spdx.org/licenses
+	DEFAULT_LICENSE = 'BSD-3-Clause'
 
 	# The file that contains the project's dependencies
 	GEMDEPS_FILE = PROJECT_DIR + 'gem.deps.rb'
@@ -70,6 +75,17 @@ class Rake::DevEiate < Rake::TaskLib
 		.rdoc
 		.txt
 	]
+
+	# The path to the data directory for the Prestigio library.
+	DEVEIATE_DATADIR = if ENV['DEVEIATE_DATADIR']
+			Pathname( ENV['DEVEIATE_DATADIR'] )
+		elsif Gem.loaded_specs['rake-deveiate'] &&
+		      File.directory?( Gem.loaded_specs['rake-deveiate'].datadir )
+			Pathname( Gem.loaded_specs['rake-deveiate'].datadir )
+		else
+			Pathname( __FILE__ ).dirname.parent + 'data/rake-deveiate'
+		end
+
 
 	# Autoload utility classes
 	autoload :GemDepFinder, 'rake/deveiate/gem_dep_finder'
@@ -86,7 +102,9 @@ class Rake::DevEiate < Rake::TaskLib
 
 	### Set up common development tasks
 	def self::setup( gemname, **options, &block )
-		return self.new( gemname, **options, &block )
+		tasklib = self.new( gemname, **options, &block )
+		tasklib.define_tasks
+		return tasklib
 	end
 
 
@@ -100,23 +118,23 @@ class Rake::DevEiate < Rake::TaskLib
 		@project_files = self.read_manifest
 		@version       = self.find_version
 		@readme_file   = self.find_readme
+		@history_file  = self.find_history_file
 		@readme        = self.parse_readme
 		@rdoc_files    = self.make_rdoc_filelist
 		@cert_files    = Rake::FileList[ CERTS_DIR + '*.pem' ]
-		@current_user  = Etc.getlogin
+		@licenses      = [ DEFAULT_LICENSE ]
 
 		@docs_dir      = DOCS_DIR.dup
 
 		@title         = self.extract_default_title
-		@authors       = []
+		@authors       = self.extract_authors
 		@dependencies  = self.find_dependencies
 
 		@gemserver     = DEFAULT_GEMSERVER
 
 		self.load_task_libraries
-		self.define_tasks
 
-		super if defined?( super )
+		super() if defined?( super )
 
 		self.instance_exec( self, &block ) if block
 	end
@@ -148,6 +166,10 @@ class Rake::DevEiate < Rake::TaskLib
 	attr_pathname :readme_file
 
 	##
+	# The file that provides high-level change history
+	attr_pathname :history_file
+
+	##
 	# The file to read the list of distribution files from
 	attr_pathname :manifest_file
 
@@ -164,8 +186,9 @@ class Rake::DevEiate < Rake::TaskLib
 	attr_reader :cert_files
 
 	##
-	# The username of the current user
-	attr_reader :current_user
+	# The licenses the project is distributed under; usual practice is to list the
+	# SPDX name: https://spdx.org/licenses
+	attr_reader :licenses
 
 	##
 	# The gem's authors in the form of strings in the format: `Name <email>`
@@ -231,6 +254,18 @@ class Rake::DevEiate < Rake::TaskLib
 	### Set up tasks for debugging the task library.
 	def define_debug_tasks
 		task( :debug ) do
+			summary = self.extract_summary
+			description = self.extract_description
+
+			self.prompt.say( self.pastel.headline "Documentation" )
+			self.prompt.say( "Authors:" )
+			self.authors.each do |author|
+				self.prompt.say( " • #{self.pastel.bold author}" )
+			end
+			self.prompt.say( "Summary: #{self.pastel.bold summary}" )
+			self.prompt.say( "Description: \n#{self.pastel.bold description}" )
+			self.prompt.say( "\n" )
+
 			self.prompt.say( self.pastel.headline "Project files:" )
 			table = self.generate_project_files_table
 			if table.empty?
@@ -310,6 +345,27 @@ class Rake::DevEiate < Rake::TaskLib
 	end
 
 
+	### Extract authors in the form `Firstname Lastname <email@address>` from the README.
+	def extract_authors
+		heading, list = self.readme&.parts.each_cons( 2 ).find do |heading, list|
+			heading.is_a?( RDoc::Markup::Heading ) && heading.text =~ /^authors?/i &&
+				list.is_a?( RDoc::Markup::List )
+		end
+
+		unless list
+			self.trace "Couldn't find an Author(s) section of the readme."
+			return []
+		end
+
+		return list.items.map do |item|
+			# unparse the name + email
+			raw = item.parts.first.text or next
+			name, email = raw.split( ' mailto:', 2 )
+			"%s <%s>" % [ name, email ]
+		end
+	end
+
+
 	### Find the file that contains the VERSION constant and return it as a
 	### Gem::Version.
 	def find_version
@@ -357,12 +413,30 @@ class Rake::DevEiate < Rake::TaskLib
 		return list
 	end
 
+
 	### Find the README file in the list of project files and return it as a
 	### Pathname.
 	def find_readme
-		file = self.project_files.find {|file| file =~ /^README\.(md|rdoc)$/ } or
-			raise "No README found in the project files."
-		return Pathname( file )
+		file = self.project_files.find {|file| file =~ /^README\.(md|rdoc)$/ }
+		if file
+			return Pathname( file )
+		else
+			self.prompt.warn "No README found in the project files."
+			return DEFAULT_README_FILE
+		end
+	end
+
+
+	### Find the history file in the list of project files and return it as a
+	### Pathname.
+	def find_history_file
+		file = self.project_files.find {|file| file =~ /^History\.(md|rdoc)$/ }
+		if file
+			return Pathname( file )
+		else
+			self.prompt.warn "No History.{md,rdoc} found in the project files."
+			return DEFAULT_HISTORY_FILE
+		end
 	end
 
 

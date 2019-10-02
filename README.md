@@ -25,6 +25,11 @@ This is a collection of Rake tasks I use for development. I distribute them as a
     $ gem install rake-deveiate
 
 
+## Authors
+
+- Michael Granger <ged@FaerieMUD.org>
+
+
 ## License
 
 Copyright (c) 2019, Michael Granger

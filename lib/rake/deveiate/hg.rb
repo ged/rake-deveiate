@@ -17,6 +17,9 @@ module Rake::DevEiate::Hg
 	# The name of the ignore file
 	IGNORE_FILE = Rake::DevEiate::PROJECT_DIR + '.hgignore'
 
+	# The prefix to use for release version tags by default
+	DEFAULT_RELEASE_TAG_PREFIX = 'v'
+
 	# Colors for presenting file statuses
 	STATUS_COLORS = {
 		'M' => [:blue],                  # modified
@@ -33,23 +36,22 @@ module Rake::DevEiate::Hg
 
 
 	### Set up defaults
-	def initialize
-		super() if defined?( super )
+	def initialize( _gemname, **options )
+		super if defined?( super )
 
-		# Follow semantic versioning tagging specification (http://semver.org/)
-		@hg_release_tag_prefix    = "v"
-		@hg_sign_tags             = false
-		@check_history_on_release = false
+		@release_tag_prefix       = options[:release_tag_prefix] || DEFAULT_RELEASE_TAG_PREFIX
+		@sign_tags                = options[:sign_tags] || true
+		@check_history_on_release = options[:check_history_on_release] || true
 	end
 
 
 	##
 	# The prefix to use for version tags
-	attr_accessor :hg_release_tag_prefix
+	attr_accessor :release_tag_prefix
 
 	##
 	# Boolean: if true, sign tags after creating them
-	attr_accessor :hg_sign_tags
+	attr_accessor :sign_tags
 
 	##
 	# Boolean: check the history file to be sure it includes the current version
@@ -162,7 +164,7 @@ module Rake::DevEiate::Hg
 		end
 
 		rev = self.hg.identify
-		pkg_version_tag = "#{self.hg_release_tag_prefix}#{self.version}"
+		pkg_version_tag = [ self.release_tag_prefix, self.version ].join
 
 		# Look for a tag for the current release version, and if it exists abort
 		if self.hg.tags.find {|tag| tag.name == pkg_version_tag }
@@ -174,7 +176,7 @@ module Rake::DevEiate::Hg
 		Rake::Task[ 'check_history' ].invoke if self.check_history_on_release
 
 		# Sign the current rev
-		if self.hg_sign_tags
+		if self.sign_tags
 			self.prompt.say "Signing rev #{rev}"
 			run 'hg', 'sign'
 		end
@@ -303,7 +305,7 @@ module Rake::DevEiate::Hg
 	### Read the list of tags and return any that don't have a corresponding section
 	### in the history file.
 	def get_unhistoried_version_tags( include_pkg_version=true )
-		prefix = self.hg_release_tag_prefix
+		prefix = self.release_tag_prefix
 		tag_pattern = /#{prefix}\d+(\.\d+)+/
 		release_tags = self.hg.tags.grep( /^#{tag_pattern}$/ )
 
