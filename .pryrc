@@ -4,6 +4,7 @@
 $LOAD_PATH.unshift( 'lib' )
 
 require 'rake/deveiate'
+require 'hglib'
 
 
 

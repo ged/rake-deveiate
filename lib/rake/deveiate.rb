@@ -264,14 +264,21 @@ class Rake::DevEiate < Rake::TaskLib
 		desc "The task that runs by default"
 		task( :default => :spec )
 
-		task :precheckin => [ :check_manifest, :gemspec, :spec ]
-		task :release => [ :prerelease, :release_gem, :postrelease ]
+		desc "Check in the current changes"
+		task :checkin => :precheckin
+		task :commit => :checkin
+		task :ci => :checkin
+		task :precheckin => [ :check, :gemspec, :spec ]
 
-		# Empty here; hooked by the task libraries
+		task :check
+
+		desc "Package up and push a release"
+		task :release => [ :prerelease, :release_gem, :postrelease ]
 		task :prerelease
 		task :release_gem
 		task :postrelease
 
+		desc "Check to be sure that the Manifest doesn't need updating"
 		task :check_manifest
 	end
 
@@ -282,16 +289,19 @@ class Rake::DevEiate < Rake::TaskLib
 			summary = self.extract_summary
 			description = self.extract_description
 
-			self.prompt.say( self.pastel.headline "Documentation" )
+			self.prompt.say( "Documentation", color: :bright_green )
 			self.prompt.say( "Authors:" )
 			self.authors.each do |author|
-				self.prompt.say( " • #{self.pastel.bold author}" )
+				self.prompt.say( " • " )
+				self.prompt.say( author, color: :bold )
 			end
-			self.prompt.say( "Summary: #{self.pastel.bold summary}" )
-			self.prompt.say( "Description: \n#{self.pastel.bold description}" )
+			self.prompt.say( "Summary: " )
+			self.prompt.say( summary, color: :bold )
+			self.prompt.say( "Description:" )
+			self.prompt.say( description, color: :bold )
 			self.prompt.say( "\n" )
 
-			self.prompt.say( self.pastel.headline "Project files:" )
+			self.prompt.say( "Project files:", color: :bright_green )
 			table = self.generate_project_files_table
 			if table.empty?
 				self.prompt.warn( "None." )
@@ -300,7 +310,7 @@ class Rake::DevEiate < Rake::TaskLib
 			end
 			self.prompt.say( "\n" )
 
-			self.prompt.say( self.pastel.headline "Dependencies" )
+			self.prompt.say( "Dependencies", color: :bright_green )
 			table = self.generate_dependencies_table
 			if table.empty?
 				self.prompt.warn( "None." )
@@ -309,7 +319,7 @@ class Rake::DevEiate < Rake::TaskLib
 			end
 			self.prompt.say( "\n" )
 
-			self.prompt.say( self.pastel.headline "Will push releases to:" )
+			self.prompt.say( "Will push releases to:", color: :bright_green )
 			self.prompt.say( "  #{self.gemserver}" )
 			self.prompt.say( "\n" )
 		end
@@ -524,7 +534,7 @@ class Rake::DevEiate < Rake::TaskLib
 		when '.md'
 			return RDoc::Markdown.parse( self.readme_file.read )
 		when '.rdoc'
-			return RDoc::Format.parse( self.readme_file.read )
+			return RDoc::Markup.parse( self.readme_file.read )
 		else
 			raise "Can't parse %s: unhandled format %p" % [ self.readme_file, README_FILE.extname ]
 		end
@@ -544,6 +554,19 @@ class Rake::DevEiate < Rake::TaskLib
 		finder.load
 		return finder.dependencies
 	end
+
+
+	### Return the character used to build headings give the filename of the file to
+	### be generated.
+	def header_char_for( filename )
+		case File.extname( filename )
+		when '.md' then return '#'
+		when '.rdoc' then return '='
+		else
+			raise "Don't know what header character is appropriate for %s" % [ filename ]
+		end
+	end
+
 
 
 	#######

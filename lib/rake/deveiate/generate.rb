@@ -106,18 +106,6 @@ module Rake::DevEiate::Generate
 		end
 	end
 
-
-	### Return the character used to build headings give the filename of the file to
-	### be generated.
-	def header_char_for( filename )
-		case File.extname( filename )
-		when '.md' then return '#'
-		when '.rdoc' then return '='
-		else
-			raise "Don't know what header character is appropriate for %s" % [ filename ]
-		end
-	end
-
 end # module Rake::DevEiate::Hg
 
 

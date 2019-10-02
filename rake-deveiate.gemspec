@@ -1,14 +1,14 @@
 # -*- encoding: utf-8 -*-
-# stub: rake-deveiate 0.2.0.pre.20191001221748 ruby lib
+# stub: rake-deveiate 0.2.0.pre.20191002093614 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "rake-deveiate".freeze
-  s.version = "0.2.0.pre.20191001221748"
+  s.version = "0.2.0.pre.20191002093614"
 
   s.required_rubygems_version = Gem::Requirement.new("> 1.3.1".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
   s.authors = ["Michael Granger".freeze]
-  s.date = "2019-10-01"
+  s.date = "2019-10-02"
   s.description = "This is a collection of Rake tasks I use for development. I distribute them as\na gem mostly so people who wish to contribute to the other Open Source\nlibraries I maintain can do so easily, but of course you're welcome to use them\nyourself if you find them useful.".freeze
   s.email = ["ged@FaerieMUD.org".freeze]
   s.files = ["History.md".freeze, "README.md".freeze, "data/rake-deveiate".freeze, "data/rake-deveiate/History.erb".freeze, "data/rake-deveiate/README.erb".freeze, "lib/rake/deveiate.rb".freeze, "lib/rake/deveiate/docs.rb".freeze, "lib/rake/deveiate/gem_dep_finder.rb".freeze, "lib/rake/deveiate/gemspec.rb".freeze, "lib/rake/deveiate/generate.rb".freeze, "lib/rake/deveiate/hg.rb".freeze, "lib/rake/deveiate/specs.rb".freeze]

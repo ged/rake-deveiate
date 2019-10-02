@@ -1,6 +1,7 @@
 # -*- ruby -*-
 # frozen_string_literal: true
 
+require 'tempfile'
 require 'shellwords'
 require 'hglib'
 require 'tty/editor'
@@ -39,9 +40,8 @@ module Rake::DevEiate::Hg
 	def initialize( _name, **options )
 		super if defined?( super )
 
-		@release_tag_prefix       = options[:release_tag_prefix] || DEFAULT_RELEASE_TAG_PREFIX
-		@sign_tags                = options[:sign_tags] || true
-		@check_history_on_release = options[:check_history_on_release] || true
+		@release_tag_prefix = options[:release_tag_prefix] || DEFAULT_RELEASE_TAG_PREFIX
+		@sign_tags          = options[:sign_tags] || true
 	end
 
 
@@ -52,11 +52,6 @@ module Rake::DevEiate::Hg
 	##
 	# Boolean: if true, sign tags after creating them
 	attr_accessor :sign_tags
-
-	##
-	# Boolean: check the history file to be sure it includes the current version
-	# when packaging up a release
-	attr_accessor :check_history_on_release
 
 
 	### Define version-control tasks
@@ -96,12 +91,10 @@ module Rake::DevEiate::Hg
 			task :precheckin
 
 			desc "Mercurial-specific pre-release hook"
-			task :prerelease
+			task :prerelease => 'hg:check_history'
 
 			desc "Check the current code in if tests pass"
 			task( :checkin => [:pull, :newfiles, :precheckin, COMMIT_MSG_FILE.to_s], &method(:do_hg_checkin) )
-			task :commit => :checkin
-			task :ci => :checkin
 
 			desc "Push to the default origin repo (if there is one)"
 			task( :push, &method(:do_hg_push) )
@@ -114,38 +107,26 @@ module Rake::DevEiate::Hg
 			desc "Check the history file to ensure it contains an entry for each release tag"
 			task( :check_history, &method(:do_hg_check_history) )
 
+			desc "Generate and edit a new version entry in the history file"
+			task( :update_history, &method(:do_hg_update_history) )
+
+			task( :debug, &method(:do_hg_debug) )
 		end
 
 
-		# Add a top-level 'ci' task for checkin
-		desc "Check in your changes"
+		# Hook some generic tasks to the mercurial-specific ones
 		task :ci => 'hg:checkin'
 
-		# Hook the generic prerelease task to the mercurial-specific one
 		task :prerelease => 'hg:prerelease'
-
-		# Hook the generic precheckin task to the mercurial-specific one
 		task :precheckin => 'hg:precheckin'
+		task :debug => 'hg:debug'
+
+		desc "Update the history file with the changes since the last version tag."
+		task :update_history => 'hg:update_history'
 
 	rescue ::Exception => err
 		$stderr.puts "%s while defining Mercurial tasks: %s" % [ err.class.name, err.message ]
 		raise
-	end
-
-
-	### Given a +status_hash+ like that returned by Hglib::Repo.status, return a
-	### string description of the files and their status.
-	def show_file_statuses( statuses )
-		lines = statuses.map do |entry|
-			status_color = STATUS_COLORS[ entry.status ]
-			"	%s: %s" % [
-				self.pastel.white( entry.path.to_s ),
-				self.pastel.decorate( entry.status_description, *status_color ),
-			]
-		end
-
-		self.prompt.say( self.pastel.headline "Uncommitted files:" )
-		self.prompt.say( lines.join("\n") )
 	end
 
 
@@ -162,27 +143,24 @@ module Rake::DevEiate::Hg
 			self.prompt.warn "Okay, releasing with uncommitted versions."
 		end
 
-		rev = self.hg.identify
-		pkg_version_tag = [ self.release_tag_prefix, self.version ].join
+		pkg_version_tag = self.current_version_tag
 
 		# Look for a tag for the current release version, and if it exists abort
 		if self.hg.tags.find {|tag| tag.name == pkg_version_tag }
-			error "Version #{self.version} already has a tag."
+			self.prompt.error "Version #{self.version} already has a tag."
 			fail
 		end
 
-		# Ensure that the History file contains an entry for every release
-		Rake::Task[ 'check_history' ].invoke if self.check_history_on_release
-
-		# Sign the current rev
 		if self.sign_tags
-			self.prompt.say "Signing rev #{rev}"
-			run 'hg', 'sign'
+			message = "Signing %s" % [ pkg_version_tag ]
+			self.prompt.ok( message )
+			self.hg.sign( message: message )
 		end
 
 		# Tag the current rev
-		self.prompt.say "Tagging rev #{rev} as #{pkg_version_tag}"
-		run 'hg', 'tag', pkg_version_tag
+		rev = self.hg.identify
+		self.prompt.ok "Tagging rev %s as %s" % [ rev, pkg_version_tag ]
+		self.hg.tag( pkg_version_tag )
 
 		# Offer to push
 		Rake::Task['hg:push'].invoke
@@ -249,19 +227,19 @@ module Rake::DevEiate::Hg
 
 	### The body of the hg:pull_without_confirmation task.
 	def do_hg_pull_without_confirmation( task, args )
-		run 'hg', 'pull', '-u'
+		self.hg.pull
 	end
 
 
 	### The body of the hg:update task.
 	def do_hg_update( task, args )
-		run 'hg', 'update'
+		self.hg.pull_update
 	end
 
 
 	### The body of the hg:update_and_clobber task.
 	def do_hg_update_and_clobber( task, args )
-		run 'hg', 'update', '-C'
+		self.hg.update( clean: true )
 	end
 
 
@@ -272,6 +250,8 @@ module Rake::DevEiate::Hg
 		if self.prompt.yes?( "Continue with checkin?" )
 			self.hg.commit( *targets, logfile: COMMIT_MSG_FILE.to_s )
 			rm_f COMMIT_MSG_FILE
+		else
+			abort
 		end
 		Rake::Task[ 'hg:push' ].invoke
 	end
@@ -283,6 +263,9 @@ module Rake::DevEiate::Hg
 		if origin_url = paths[:default]
 			if self.prompt.yes?( "Push to '#{origin_url}'?" ) {|q| q.default(false) }
 				self.hg.push
+				self.prompt.ok "Done."
+			else
+				abort
 			end
 		else
 			trace "Skipping push: No 'default' path."
@@ -293,15 +276,94 @@ module Rake::DevEiate::Hg
 	### Check the history file against the list of release tags in the working copy
 	### and ensure there's an entry for each tag.
 	def do_hg_check_history( task, *args )
+		unless self.history_file.readable?
+			self.prompt.error "History file is missing or unreadable."
+			abort
+		end
+
 		self.prompt.say "Checking history..."
-		missing_tags = get_unhistoried_version_tags()
+		missing_tags = self.get_unhistoried_version_tags
 
 		unless missing_tags.empty?
-			abort "%s needs updating; missing entries for tags: %p" %
-				[ self.history_file, missing_tags ]
+			self.prompt.error "%s needs updating; missing entries for tags: %s" %
+				[ self.history_file, missing_tags.join(', ') ]
+			abort
 		end
 	end
 
+
+	### Generate a new history file entry for the current version.
+	def do_hg_update_history( task, *args )
+		unless self.history_file.readable?
+			self.prompt.error "History file is missing or unreadable."
+			abort
+		end
+
+		version_tag = self.current_version_tag
+		previous_tag = self.previous_version_tag
+		self.prompt.say "Updating history for %s..." % [ version_tag ]
+
+		if self.get_history_file_versions.include?( version_tag )
+			self.log.ok "History file already includes a section for %s" % [ version_tag ]
+			abort
+		end
+
+		header, rest = self.history_file.read( encoding: 'utf-8' ).split( '---', 2 )
+
+		if !header || header.empty?
+			self.prompt.error "History file needs a `---` marker to support updating."
+			abort
+		end
+
+		header_char = self.header_char_for( self.history_file )
+		ext = self.history_file.extname
+		log_entries = if previous_tag
+				self.hg.log( rev: "#{previous_tag}~-2::" )
+			else
+				self.hg.log
+			end
+
+		Tempfile.create( ['History', ext], encoding: 'utf-8' ) do |tmp_copy|
+			tmp_copy.print( header )
+			tmp_copy.puts '---'
+			tmp_copy.puts
+
+			tmp_copy.puts "%s %s [%s] %s" % [
+				header_char * 2,
+				version_tag,
+				Date.today.strftime( '%Y/%m/%d' ),
+				self.authors.first,
+			]
+
+			tmp_copy.puts
+			log_entries.each do |entry|
+				tmp_copy.puts "- %s" % [ entry.summary ]
+			end
+			tmp_copy.puts
+
+			tmp_copy.print( rest )
+			tmp_copy.close
+
+			TTY::Editor.open( tmp_copy.path )
+
+			if File.size?( tmp_copy.path )
+				cp( tmp_copy.path, self.history_file )
+			else
+				self.prompt.error "Empty file: aborting."
+			end
+		end
+
+	end
+
+
+	### Show debugging information.
+	def do_hg_debug( task, *args )
+		self.prompt.say( "Hg Info", color: :bright_green )
+
+		self.prompt.say( "Mercurial version: " )
+		self.prompt.say( self.hg.version, color: :bold )
+		self.prompt.say( "\n" )
+	end
 
 	#
 	# utility methods
@@ -314,22 +376,68 @@ module Rake::DevEiate::Hg
 	end
 
 
+	### Given a +status_hash+ like that returned by Hglib::Repo.status, return a
+	### string description of the files and their status.
+	def show_file_statuses( statuses )
+		lines = statuses.map do |entry|
+			status_color = STATUS_COLORS[ entry.status ]
+			"	%s: %s" % [
+				self.pastel.white( entry.path.to_s ),
+				self.pastel.decorate( entry.status_description, *status_color ),
+			]
+		end
+
+		self.prompt.say( self.pastel.headline "Uncommitted files:" )
+		self.prompt.say( lines.join("\n") )
+	end
+
+
+	### Fetch the name of the current version's tag.
+	def current_version_tag
+		return [ self.release_tag_prefix, self.version ].join
+	end
+
+
+	### Fetch the name of the tag for the previous version.
+	def previous_version_tag
+		return self.get_version_tag_names.first
+	end
+
+
+	### Return a Regexp that matches the project's convention for versions.
+	def release_tag_pattern
+		prefix = self.release_tag_prefix
+		return /\A#{prefix}\d+(\.\d+)+\z/
+	end
+
+
+	### Fetch the list of names of tags that match the versioning scheme of this
+	### project.
+	def get_version_tag_names
+		tag_pattern = self.release_tag_pattern
+		return self.hg.tags.map( &:name ).grep( tag_pattern )
+	end
+
+
+	### Fetch the list of the versions of releases that have entries in the history
+	### file.
+	def get_history_file_versions
+		tag_pattern = self.release_tag_pattern
+
+		return IO.readlines( self.history_file ).grep( tag_pattern ).map do |line|
+			line[ /^(?:h\d\.|#+|=+)\s+(#{tag_pattern})\s+/, 1 ]
+		end.compact
+	end
+
+
 	### Read the list of tags and return any that don't have a corresponding section
 	### in the history file.
-	def get_unhistoried_version_tags( include_pkg_version=true )
-		prefix = self.release_tag_prefix
-		tag_pattern = /#{prefix}\d+(\.\d+)+/
-		release_tags = self.hg.tags.grep( /^#{tag_pattern}$/ )
+	def get_unhistoried_version_tags( include_current_version: true )
+		release_tags = self.get_version_tag_names
+		release_tags.unshift( self.current_version_tag ) if include_current_version
 
-		release_tags.unshift( "#{prefix}#{version}" ) if include_pkg_version
-
-		IO.readlines( self.history_file ).each do |line|
-			if line =~ /^(?:h\d\.|#+|=+)\s+(#{tag_pattern})\s+/
-				trace "  found an entry for tag %p: %p" % [ $1, line ]
-				release_tags.delete( $1 )
-			else
-				trace "  no tag on line %p" % [ line ]
-			end
+		self.get_history_file_versions.each do |tag|
+			release_tags.delete( tag )
 		end
 
 		return release_tags
