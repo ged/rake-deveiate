@@ -116,6 +116,8 @@ class Rake::DevEiate < Rake::TaskLib
 		self.load_task_libraries
 		self.define_tasks
 
+		super if defined?( super )
+
 		self.instance_exec( self, &block ) if block
 	end
 

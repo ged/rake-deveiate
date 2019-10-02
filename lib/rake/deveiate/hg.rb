@@ -32,6 +32,31 @@ module Rake::DevEiate::Hg
 	FILE_INDENT = " • "
 
 
+	### Set up defaults
+	def initialize
+		super() if defined?( super )
+
+		# Follow semantic versioning tagging specification (http://semver.org/)
+		@hg_release_tag_prefix    = "v"
+		@hg_sign_tags             = false
+		@check_history_on_release = false
+	end
+
+
+	##
+	# The prefix to use for version tags
+	attr_accessor :hg_release_tag_prefix
+
+	##
+	# Boolean: if true, sign tags after creating them
+	attr_accessor :hg_sign_tags
+
+	##
+	# Boolean: check the history file to be sure it includes the current version
+	# when packaging up a release
+	attr_accessor :check_history_on_release
+
+
 	### Define version-control tasks
 	def define_tasks
 		super if defined?( super )
@@ -136,13 +161,12 @@ module Rake::DevEiate::Hg
 			self.prompt.warn "Okay, releasing with uncommitted versions."
 		end
 
-		rev = get_current_rev()
-		pkg_version_tag = "#{hg_release_tag_prefix}#{version}"
-		tags = get_tags()
+		rev = self.hg.identify
+		pkg_version_tag = "#{self.hg_release_tag_prefix}#{self.version}"
 
 		# Look for a tag for the current release version, and if it exists abort
-		if tags.include?( pkg_version_tag )
-			error "Version #{version} already has a tag."
+		if self.hg.tags.find {|tag| tag.name == pkg_version_tag }
+			error "Version #{self.version} already has a tag."
 			fail
 		end
 
@@ -269,28 +293,10 @@ module Rake::DevEiate::Hg
 	# utility methods
 	#
 
-	attr_accessor :hg_release_tag_prefix
-	attr_accessor :hg_sign_tags
-	attr_accessor :check_history_on_release
-
-
 	### Return an Hglib::Repo for the directory rake was invoked in, creating it if
 	### necessary.
 	def hg
 		@hg ||= Hglib.repo( Rake::DevEiate::PROJECT_DIR )
-	end
-
-
-	### Set up defaults
-	def initialize_mercurial
-		# Follow semantic versioning tagging specification (http://semver.org/)
-		self.hg_release_tag_prefix    = "v"
-		self.hg_sign_tags             = false
-		self.check_history_on_release = false
-
-		minor_version = VERSION[ /^\d+\.\d+/ ]
-		self.extra_dev_deps << ['hoe-mercurial', "~> #{minor_version}"] unless
-			self.name == 'hoe-mercurial'
 	end
 
 
@@ -299,7 +305,7 @@ module Rake::DevEiate::Hg
 	def get_unhistoried_version_tags( include_pkg_version=true )
 		prefix = self.hg_release_tag_prefix
 		tag_pattern = /#{prefix}\d+(\.\d+)+/
-		release_tags = get_tags().grep( /^#{tag_pattern}$/ )
+		release_tags = self.hg.tags.grep( /^#{tag_pattern}$/ )
 
 		release_tags.unshift( "#{prefix}#{version}" ) if include_pkg_version
 
