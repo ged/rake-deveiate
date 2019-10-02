@@ -37,7 +37,7 @@ module Rake::DevEiate::Hg
 
 
 	### Set up defaults
-	def initialize( _name, **options )
+	def setup( _name, **options )
 		super if defined?( super )
 
 		@release_tag_prefix = options[:release_tag_prefix] || DEFAULT_RELEASE_TAG_PREFIX
@@ -362,6 +362,27 @@ module Rake::DevEiate::Hg
 
 		self.prompt.say( "Mercurial version: " )
 		self.prompt.say( self.hg.version, color: :bold )
+		self.prompt.say( "Release tag prefix: " )
+		self.prompt.say( self.release_tag_prefix, color: :bold )
+
+		self.prompt.say( "Version tags:" )
+		self.get_version_tag_names.each do |tag|
+			self.prompt.say( '- ' )
+			self.prompt.say( tag, color: :bold )
+		end
+
+		self.prompt.say( "History file versions:" )
+		self.get_history_file_versions.each do |tag|
+			self.prompt.say( '- ' )
+			self.prompt.say( tag, color: :bold )
+		end
+
+		self.prompt.say( "Unhistoried version tags:" )
+		self.get_unhistoried_version_tags.each do |tag|
+			self.prompt.say( '- ' )
+			self.prompt.say( tag, color: :bold )
+		end
+
 		self.prompt.say( "\n" )
 	end
 
@@ -407,7 +428,7 @@ module Rake::DevEiate::Hg
 	### Return a Regexp that matches the project's convention for versions.
 	def release_tag_pattern
 		prefix = self.release_tag_prefix
-		return /\A#{prefix}\d+(\.\d+)+\z/
+		return /#{prefix}\d+(\.\d+)+/
 	end
 
 

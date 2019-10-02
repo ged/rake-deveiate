@@ -163,6 +163,10 @@ class Rake::DevEiate < Rake::TaskLib
 	attr_reader :name
 
 	##
+	# The options Hash the task lib was created with
+	attr_reader :options
+
+	##
 	# The descriotion of the gem
 	attr_accessor :description
 
@@ -247,6 +251,14 @@ class Rake::DevEiate < Rake::TaskLib
 				self.trace "Loading tasks from %p" % [ mod ]
 				extend( mod )
 			end
+
+		self.setup( self.name, **self.options )
+	end
+
+
+	### Post-loading callback.
+	def setup( name, **options )
+		# No-op
 	end
 
 
