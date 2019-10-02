@@ -1,0 +1,12 @@
+History.md
+README.md
+lib/rake/deveiate.rb
+lib/rake/deveiate/docs.rb
+lib/rake/deveiate/gem_dep_finder.rb
+lib/rake/deveiate/gemspec.rb
+lib/rake/deveiate/generate.rb
+lib/rake/deveiate/hg.rb
+lib/rake/deveiate/specs.rb
+data/rake-deveiate
+data/rake-deveiate/History.erb
+data/rake-deveiate/README.erb

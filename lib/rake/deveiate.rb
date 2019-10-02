@@ -264,12 +264,15 @@ class Rake::DevEiate < Rake::TaskLib
 		desc "The task that runs by default"
 		task( :default => :spec )
 
-		task :release => [:prerelease, :release_gem, :postrelease]
+		task :precheckin => [ :check_manifest, :gemspec, :spec ]
+		task :release => [ :prerelease, :release_gem, :postrelease ]
 
 		# Empty here; hooked by the task libraries
 		task :prerelease
 		task :release_gem
 		task :postrelease
+
+		task :check_manifest
 	end
 
 

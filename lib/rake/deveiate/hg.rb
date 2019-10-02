@@ -63,6 +63,8 @@ module Rake::DevEiate::Hg
 	def define_tasks
 		super if defined?( super )
 
+		return unless File.directory?( '.hg' )
+
 		file COMMIT_MSG_FILE.to_s do |task|
 			edit_commit_log( task.name )
 		end
@@ -72,40 +74,45 @@ module Rake::DevEiate::Hg
 		namespace :hg do
 
 			desc "Prepare for a new release"
-			task( :prep_release, &method(:do_prep_release) )
+			task( :prerelease, &method(:do_hg_prerelease) )
 
 			desc "Check for new files and offer to add/ignore/delete them."
-			task( :newfiles, &method(:do_newfiles) )
+			task( :newfiles, &method(:do_hg_newfiles) )
 			task :add => :newfiles
 
 			desc "Pull and update from the default repo"
-			task( :pull, &method(:do_pull) )
+			task( :pull, &method(:do_hg_pull) )
 
 			desc "Pull and update without confirmation"
-			task( :pull_without_confirmation, &method(:do_pull_without_confirmation) )
+			task( :pull_without_confirmation, &method(:do_hg_pull_without_confirmation) )
 
 			desc "Update to tip"
-			task( :update, &method(:do_update) )
+			task( :update, &method(:do_hg_update) )
 
 			desc "Clobber all changes (hg up -C)"
-			task( :update_and_clobber, &method(:do_update_and_clobber) )
+			task( :update_and_clobber, &method(:do_hg_update_and_clobber) )
 
-			task :precheckin do
-				trace "Pre-checkin hooks"
-			end
+			desc "Mercurial-specific pre-checkin hook"
+			task :precheckin
+
+			desc "Mercurial-specific pre-release hook"
+			task :prerelease
 
 			desc "Check the current code in if tests pass"
-			task( :checkin => [:pull, :newfiles, :precheckin, COMMIT_MSG_FILE.to_s], &method(:do_checkin) )
+			task( :checkin => [:pull, :newfiles, :precheckin, COMMIT_MSG_FILE.to_s], &method(:do_hg_checkin) )
 			task :commit => :checkin
 			task :ci => :checkin
 
 			desc "Push to the default origin repo (if there is one)"
-			task( :push, &method(:do_push) )
+			task( :push, &method(:do_hg_push) )
 
 			desc "Push to the default repo without confirmation"
 			task :push_without_confirmation do |task, args|
 				self.hg.push
 			end
+
+			desc "Check the history file to ensure it contains an entry for each release tag"
+			task( :check_history, &method(:do_hg_check_history) )
 
 		end
 
@@ -114,19 +121,11 @@ module Rake::DevEiate::Hg
 		desc "Check in your changes"
 		task :ci => 'hg:checkin'
 
-		# Hook the release task and prep the repo first
-		task :prerelease => 'hg:prep_release'
+		# Hook the generic prerelease task to the mercurial-specific one
+		task :prerelease => 'hg:prerelease'
 
-		desc "Check the history file to ensure it contains an entry for each release tag"
-		task :check_history do
-			self.prompt.say "Checking history..."
-			missing_tags = get_unhistoried_version_tags()
-
-			unless missing_tags.empty?
-				abort "%s needs updating; missing entries for tags: %p" %
-					[ self.history_file, missing_tags ]
-			end
-		end
+		# Hook the generic precheckin task to the mercurial-specific one
+		task :precheckin => 'hg:precheckin'
 
 	rescue ::Exception => err
 		$stderr.puts "%s while defining Mercurial tasks: %s" % [ err.class.name, err.message ]
@@ -150,8 +149,8 @@ module Rake::DevEiate::Hg
 	end
 
 
-	### The body of the hg:prep_release task.
-	def do_prep_release( task, args )
+	### The body of the hg:prerelease task.
+	def do_hg_prerelease( task, args )
 		uncommitted_files = self.hg.status( n: true )
 		unless uncommitted_files.empty?
 			self.show_file_statuses( uncommitted_files )
@@ -191,7 +190,7 @@ module Rake::DevEiate::Hg
 
 
 	### The body of the hg:newfiles task.
-	def do_newfiles( task, args )
+	def do_hg_newfiles( task, args )
 		self.prompt.say "Checking for new files..."
 
 		entries = self.hg.status( no_status: true, unknown: true )
@@ -236,7 +235,7 @@ module Rake::DevEiate::Hg
 
 
 	### The body of the hg:pull task.
-	def do_pull( task, args )
+	def do_hg_pull( task, args )
 		paths = self.hg.paths
 		if origin_url = paths[:default]
 			if self.prompt.yes?( "Pull and update from '#{origin_url}'?" )
@@ -249,25 +248,25 @@ module Rake::DevEiate::Hg
 
 
 	### The body of the hg:pull_without_confirmation task.
-	def do_pull_without_confirmation( task, args )
+	def do_hg_pull_without_confirmation( task, args )
 		run 'hg', 'pull', '-u'
 	end
 
 
 	### The body of the hg:update task.
-	def do_update( task, args )
+	def do_hg_update( task, args )
 		run 'hg', 'update'
 	end
 
 
 	### The body of the hg:update_and_clobber task.
-	def do_update_and_clobber( task, args )
+	def do_hg_update_and_clobber( task, args )
 		run 'hg', 'update', '-C'
 	end
 
 
 	### The body of the checkin task.
-	def do_checkin( task, args )
+	def do_hg_checkin( task, args )
 		targets = args.extras
 		self.prompt.say( self.pastel.cyan( "---\n", COMMIT_MSG_FILE.read, "---\n" ) )
 		if self.prompt.yes?( "Continue with checkin?" )
@@ -279,7 +278,7 @@ module Rake::DevEiate::Hg
 
 
 	### The body of the push task.
-	def do_push( task, args )
+	def do_hg_push( task, args )
 		paths = self.hg.paths
 		if origin_url = paths[:default]
 			if self.prompt.yes?( "Push to '#{origin_url}'?" ) {|q| q.default(false) }
@@ -287,6 +286,19 @@ module Rake::DevEiate::Hg
 			end
 		else
 			trace "Skipping push: No 'default' path."
+		end
+	end
+
+
+	### Check the history file against the list of release tags in the working copy
+	### and ensure there's an entry for each tag.
+	def do_hg_check_history( task, *args )
+		self.prompt.say "Checking history..."
+		missing_tags = get_unhistoried_version_tags()
+
+		unless missing_tags.empty?
+			abort "%s needs updating; missing entries for tags: %p" %
+				[ self.history_file, missing_tags ]
 		end
 	end
 

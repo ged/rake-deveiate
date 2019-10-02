@@ -14,6 +14,13 @@ module Rake::DevEiate::Generate
 	README_TEMPLATE = Rake::DevEiate::DEVEIATE_DATADIR + 'README.erb'
 	HISTORY_TEMPLATE = Rake::DevEiate::DEVEIATE_DATADIR + 'History.erb'
 
+	# RVM metadata files
+	RUBY_VERSION_FILE = Rake::DevEiate::PROJECT_DIR + '.ruby-version'
+	GEMSET_FILE = Rake::DevEiate::PROJECT_DIR + '.ruby-gemset'
+
+	# Flags to use when opening a file for generation
+	FILE_CREATION_FLAGS = File::WRONLY | File::CREAT | File::EXCL
+
 
 	### Define generation tasks.
 	def define_tasks
@@ -21,11 +28,23 @@ module Rake::DevEiate::Generate
 
 		file( self.readme_file.to_s )
 		file( self.history_file.to_s )
+		file( self.manifest_file.to_s )
+		file( RUBY_VERSION_FILE.to_s )
+		file( GEMSET_FILE.to_s )
 
 		task( self.readme_file, &method(:do_generate_readme_file) )
 		task( self.history_file, &method(:do_generate_history_file) )
+		task( self.manifest_file, &method(:do_generate_manifest_file) )
+		task( RUBY_VERSION_FILE, &method(:do_generate_ruby_version_file) )
+		task( GEMSET_FILE, &method(:do_generate_gemset_file) )
 
-		task :generate => [ self.readme_file, self.history_file ]
+		task :generate => [
+			self.readme_file,
+			self.history_file,
+			self.manifest_file,
+			RUBY_VERSION_FILE,
+			GEMSET_FILE,
+		]
 	end
 
 
@@ -43,6 +62,33 @@ module Rake::DevEiate::Generate
 	end
 
 
+	### Generate a manifest with a default set of files listed.
+	def do_generate_manifest_file( task, *args )
+		self.prompt.ok "Generating #{task.name}..."
+		File.open( task.name, FILE_CREATION_FLAGS, 0644, encoding: 'utf-8' ) do |io|
+			io.puts( *self.project_files )
+		end
+	end
+
+
+	### Generate a file that sets the project's working Ruby version.
+	def do_generate_ruby_version_file( task, *args )
+		self.prompt.ok "Generating #{task.name}..."
+		File.open( task.name, FILE_CREATION_FLAGS, 0644, encoding: 'utf-8' ) do |io|
+			io.puts( RUBY_VERSION.sub(/\.\d+$/, '') )
+		end
+	end
+
+
+	### Generate a file that sets the project's gemset
+	def do_generate_gemset_file( task, *args )
+		self.prompt.ok "Generating #{task.name}..."
+		File.open( task.name, FILE_CREATION_FLAGS, 0644, encoding: 'utf-8' ) do |io|
+			io.puts( self.name )
+		end
+	end
+
+
 	### Generate the given +filename+ from the template filed at +template_path+.
 	def generate_from_template( filename, template_path )
 		template_src = template_path.read( encoding: 'utf-8' )
@@ -51,7 +97,7 @@ module Rake::DevEiate::Generate
 		header_char = self.header_char_for( filename )
 
 		self.prompt.ok "Generating #{filename}..."
-		File.open( filename, File::WRONLY|File::CREAT|File::EXCL, 0644, encoding: 'utf-8' ) do |io|
+		File.open( filename, FILE_CREATION_FLAGS, 0644, encoding: 'utf-8' ) do |io|
 			result = template.result_with_hash(
 				header_char: header_char,
 				project: self
