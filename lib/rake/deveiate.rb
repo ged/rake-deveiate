@@ -39,6 +39,12 @@ class Rake::DevEiate < Rake::TaskLib
 	# The server to release to by default
 	DEFAULT_GEMSERVER = 'https://rubygems.org/'
 
+	# The description to use if none is set
+	DEFAULT_DESCRIPTION = "A gem of some sort."
+
+	# The version to use if one cannot be read from the source
+	DEFAULT_VERSION = '0.1.0'
+
 	# Paths
 	PROJECT_DIR = Pathname( '.' )
 
@@ -55,9 +61,9 @@ class Rake::DevEiate < Rake::TaskLib
 	DEFAULT_PROJECT_FILES = Rake::FileList[
 		'*.{rdoc,md,txt}',
 		'bin/*',
-		'lib/**.rb',
-		'ext/**.[ch]',
-		'data/**'
+		'lib/*.rb', 'lib/**/*.rb',
+		'ext/*.[ch]', 'ext/**/*.[ch]',
+		'data/**/*'
 	]
 
 	# The default license for the project in SPDX form: https://spdx.org/licenses
@@ -83,7 +89,7 @@ class Rake::DevEiate < Rake::TaskLib
 		      File.directory?( Gem.loaded_specs['rake-deveiate'].datadir )
 			Pathname( Gem.loaded_specs['rake-deveiate'].datadir )
 		else
-			Pathname( __FILE__ ).dirname.parent + 'data/rake-deveiate'
+			Pathname( __FILE__ ).dirname.parent.parent + 'data/rake-deveiate'
 		end
 
 
@@ -101,22 +107,22 @@ class Rake::DevEiate < Rake::TaskLib
 
 
 	### Set up common development tasks
-	def self::setup( gemname, **options, &block )
-		tasklib = self.new( gemname, **options, &block )
+	def self::setup( name, **options, &block )
+		tasklib = self.new( name, **options, &block )
 		tasklib.define_tasks
 		return tasklib
 	end
 
 
 
-	### Create the devEiate tasks for a gem with the given +gemname+.
-	def initialize( gemname, **options, &block )
-		@gemname       = validate_gemname( gemname )
+	### Create the devEiate tasks for a gem with the given +name+.
+	def initialize( name, **options, &block )
+		@name          = validate_gemname( name )
 		@options       = options
 
 		@manifest_file = DEFAULT_MANIFEST_FILE.dup
 		@project_files = self.read_manifest
-		@version       = self.find_version
+		@version       = self.find_version || DEFAULT_VERSION
 		@readme_file   = self.find_readme
 		@history_file  = self.find_history_file
 		@readme        = self.parse_readme
@@ -128,6 +134,8 @@ class Rake::DevEiate < Rake::TaskLib
 
 		@title         = self.extract_default_title
 		@authors       = self.extract_authors
+		@description   = self.extract_description || DEFAULT_DESCRIPTION
+		@summary       = nil
 		@dependencies  = self.find_dependencies
 
 		@gemserver     = DEFAULT_GEMSERVER
@@ -136,7 +144,13 @@ class Rake::DevEiate < Rake::TaskLib
 
 		super() if defined?( super )
 
-		self.instance_exec( self, &block ) if block
+		if block
+			if block.arity.nonzero?
+				block.call( self )
+			else
+				self.instance_exec( self, &block )
+			end
+		end
 	end
 
 
@@ -146,16 +160,24 @@ class Rake::DevEiate < Rake::TaskLib
 
 	##
 	# The name of the gem the task will build
-	attr_reader :gemname
+	attr_reader :name
+
+	##
+	# The descriotion of the gem
+	attr_accessor :description
+
+	##
+	# The summary description of the gem.
+	attr_accessor :summary
 
 	##
 	# The Gem::Version of the current library, extracted from the top-level
 	# namespace.
-	attr_reader :version
+	attr_accessor :version
 
 	##
 	# The README of the project as an RDoc::Markup::Document
-	attr_reader :readme
+	attr_accessor :readme
 
 	##
 	# The title of the library for things like docs, gemspec, etc.
@@ -175,28 +197,28 @@ class Rake::DevEiate < Rake::TaskLib
 
 	##
 	# The files which should be distributed with the project as a Rake::FileList
-	attr_reader :project_files
+	attr_accessor :project_files
 
 	##
 	# The files which should be used to generate documentation as a Rake::FileList
-	attr_reader :rdoc_files
+	attr_accessor :rdoc_files
 
 	##
 	# The public cetificates that can be used to verify signed gems
-	attr_reader :cert_files
+	attr_accessor :cert_files
 
 	##
 	# The licenses the project is distributed under; usual practice is to list the
 	# SPDX name: https://spdx.org/licenses
-	attr_reader :licenses
+	attr_accessor :licenses
 
 	##
 	# The gem's authors in the form of strings in the format: `Name <email>`
-	attr_reader :authors
+	attr_accessor :authors
 
 	##
 	# The Gem::RequestSet that describes the gem's dependencies
-	attr_reader :dependencies
+	attr_accessor :dependencies
 
 	##
 	# The gemserver to push gems to
@@ -328,26 +350,38 @@ class Rake::DevEiate < Rake::TaskLib
 	### Extract the default title from the README if possible, or derive it from the
 	### gem name.
 	def extract_default_title
-		title = self.readme&.table_of_contents.first.text
+		return self.name unless self.readme&.table_of_contents&.first
+		title = self.readme.table_of_contents.first.text
 		title ||= self.name
 	end
 
 
 	### Extract a summary from the README if possible. Returns +nil+ if not.
 	def extract_summary
-		return self.extract_description&.split( /(?<=\.)\s+/ ).first
+		return self.description.split( /(?<=\.)\s+/ ).first.gsub( /\n/, ' ' )
 	end
 
 
 	### Extract a description from the README if possible. Returns +nil+ if not.
 	def extract_description
-		return self.readme&.parts.find {|part| part.is_a?(RDoc::Markup::Paragraph) }&.text
+		parts = self.readme&.parts or return nil
+		return parts.find {|part| part.is_a?(RDoc::Markup::Paragraph) }&.text
+	end
+
+
+	### Return just the name parts of the library's authors setting.
+	def author_names
+		return self.authors.map do |author|
+			author[ /^(.*?) </, 1 ]
+		end
 	end
 
 
 	### Extract authors in the form `Firstname Lastname <email@address>` from the README.
 	def extract_authors
-		heading, list = self.readme&.parts.each_cons( 2 ).find do |heading, list|
+		return [] unless self.readme
+
+		heading, list = self.readme.parts.each_cons( 2 ).find do |heading, list|
 			heading.is_a?( RDoc::Markup::Heading ) && heading.text =~ /^authors?/i &&
 				list.is_a?( RDoc::Markup::List )
 		end
@@ -369,8 +403,12 @@ class Rake::DevEiate < Rake::TaskLib
 	### Find the file that contains the VERSION constant and return it as a
 	### Gem::Version.
 	def find_version
-		version_file = LIB_DIR + "%s.rb" % [ self.gemname.gsub(/-/, '/') ]
-		raise "Version could not be read from %s" % [version_file] unless version_file.readable?
+		version_file = LIB_DIR + "%s.rb" % [ self.name.gsub(/-/, '/') ]
+
+		unless version_file.readable?
+			self.prompt.warn "Version could not be read from %s" % [ version_file ]
+			return nil
+		end
 
 		version_line = version_file.readlines.find {|l| l =~ VERSION_PATTERN } or
 			abort "Can't read the VERSION from #{version_file}!"
@@ -477,6 +515,8 @@ class Rake::DevEiate < Rake::TaskLib
 
 	### Parse the README into an RDoc::Markup::Document and return it
 	def parse_readme
+		return nil unless self.readme_file.readable?
+
 		case self.readme_file.extname
 		when '.md'
 			return RDoc::Markdown.parse( self.readme_file.read )

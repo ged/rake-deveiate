@@ -36,7 +36,7 @@ module Rake::DevEiate::Hg
 
 
 	### Set up defaults
-	def initialize( _gemname, **options )
+	def initialize( _name, **options )
 		super if defined?( super )
 
 		@release_tag_prefix       = options[:release_tag_prefix] || DEFAULT_RELEASE_TAG_PREFIX

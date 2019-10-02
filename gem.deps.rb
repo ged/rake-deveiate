@@ -11,5 +11,5 @@ gem 'tty-editor', '~> 0.5'
 gem 'tty-table', '~> 0.11'
 gem 'pastel', '~> 0.7'
 
-gem 'rdoc-generator-fivefish', '~> 0.4'
+gem 'rdoc-generator-fivefish', '~> 0.4', group: :development
 

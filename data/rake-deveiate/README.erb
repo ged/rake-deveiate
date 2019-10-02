@@ -1,61 +1,40 @@
-# Rake Tasks for DevEiate Libraries
+<%= header_char %> <%= project.name.gsub(/\b([a-z])/) {|m| m.upcase } %>
 
 home
-: https://hg.sr.ht/~ged/rake-deveiate
+: https://hg.sr.ht/~ged/<%= project.name %>
 
 github
-: https://github.com/ged/rake-deveiate
+: https://github.com/ged/<%= project.name %>
 
 docs
-: https://deveiate.org/code/rake-deveiate/
+: https://deveiate.org/code/<%= project.name %>
 
 
-## Description
+<%= header_char * 2 %> Description
 
-This is a collection of Rake tasks I use for development. I distribute them as
-a gem mostly so people who wish to contribute to the other Open Source
-libraries I maintain can do so easily, but of course you're welcome to use them
-yourself if you find them useful.
+A gem of some sort.
 
 
-## Prerequisites
+<%= header_char * 2 %> Prerequisites
 
-* Ruby 2.6+
-
-
-## Installation
-
-    $ gem install rake-deveiate
+* Ruby <%= RUBY_VERSION.sub(/\.\d+$/, '') %>
 
 
-## Usage
+<%= header_char * 2 %> Installation
 
-Make a Rakefile with the following content:
-
-    require 'rake/deveiate'
-    
-    Rake::DevEiate.setup( 'gemname' )
-
-You can also pass a block to customize the project settings:
-
-    Rake::DevEiate.setup( 'gemname' ) do |project|
-        project.description = <<~END_DESC
-          This is a gem that does some stuff. It does a few things well, a lot of
-          things sufficiently, and nothing badly.
-        END_DESC
-        project.authors = [ 'J. Random Hacker <jrandom@example.com>' ]
-    end
+    $ gem install <%= project.name %>
 
 
+<%= header_char * 2 %> Authors
 
-## Authors
+<% project.authors.each do |author| -%>
+- <%= author %>
+<% end -%>
 
-- Michael Granger <ged@FaerieMUD.org>
 
+<%= header_char * 2 %> License
 
-## License
-
-Copyright (c) 2019, Michael Granger
+Copyright (c) <%= Date.today.year %>, <%= project.author_names.join(' and ') %>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -82,3 +61,4 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+

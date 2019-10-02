@@ -20,7 +20,7 @@ module Rake::DevEiate::Gemspec
 	def define_tasks
 		super if defined?( super )
 
-		gemspec_file = "#{self.gemname}.gemspec"
+		gemspec_file = "#{self.name}.gemspec"
 
 		if self.has_manifest?
 			file( self.manifest_file )
@@ -50,9 +50,9 @@ module Rake::DevEiate::Gemspec
 	def make_gemspec
 		spec = Gem::Specification.new
 
-		spec.name         = self.gemname
-		spec.summary      = self.extract_summary || "A gem of some sort."
-		spec.description  = self.extract_description || spec.summary
+		spec.name         = self.name
+		spec.description  = self.description
+		spec.summary      = self.summary || self.extract_summary
 		spec.files        = self.project_files
 		spec.signing_key  = File.expand_path( "~/.gem/gem-private_key.pem" )
 		spec.cert_chain   = self.cert_files

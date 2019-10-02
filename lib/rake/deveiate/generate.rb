@@ -19,14 +19,13 @@ module Rake::DevEiate::Generate
 	def define_tasks
 		super if defined?( super )
 
-		namespace :generate do
+		file( self.readme_file.to_s )
+		file( self.history_file.to_s )
 
-			file( self.readme_file.to_s )
-			file( self.history_file.to_s )
+		task( self.readme_file, &method(:do_generate_readme_file) )
+		task( self.history_file, &method(:do_generate_history_file) )
 
-			task( self.readme_file, &method(:do_generate_readme_file) )
-			task( self.history_file, &method(:do_generate_history_file) )
-		end
+		task :generate => [ self.readme_file, self.history_file ]
 	end
 
 
@@ -47,7 +46,7 @@ module Rake::DevEiate::Generate
 	### Generate the given +filename+ from the template filed at +template_path+.
 	def generate_from_template( filename, template_path )
 		template_src = template_path.read( encoding: 'utf-8' )
-		template = ERB.new( template_src, trim_mode: '>' )
+		template = ERB.new( template_src, trim_mode: '-' )
 
 		header_char = self.header_char_for( filename )
 
