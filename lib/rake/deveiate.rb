@@ -54,6 +54,7 @@ class Rake::DevEiate < Rake::TaskLib
 	SPEC_DIR    = PROJECT_DIR + 'spec'
 	DATA_DIR    = PROJECT_DIR + 'data'
 	CERTS_DIR   = PROJECT_DIR + 'certs'
+	PKG_DIR     = PROJECT_DIR + 'pkg'
 
 	DEFAULT_MANIFEST_FILE = PROJECT_DIR + 'Manifest.txt'
 	DEFAULT_README_FILE = PROJECT_DIR + 'README.md'
@@ -579,6 +580,29 @@ class Rake::DevEiate < Rake::TaskLib
 		end
 	end
 
+
+	### Read a template with the given +name+ from the data directory and return it
+	### as an ERB object.
+	def read_template( name )
+		name = "%s.erb" % [ name ] unless name.to_s.end_with?( '.erb' )
+		template_path = DEVEIATE_DATADIR + name
+		template_src = template_path.read( encoding: 'utf-8' )
+
+		return ERB.new( template_src, trim_mode: '-' )
+	end
+
+
+	### Load the template at the specified +template_path+, and render it with suitable
+	### settings for the given +target_filename+.
+	def load_and_render_template( template_path, target_filename )
+		template = self.read_template( template_path )
+		header_char = self.header_char_for( target_filename )
+
+		return template.result_with_hash(
+			header_char: header_char,
+			project: self
+		)
+	end
 
 
 	#######

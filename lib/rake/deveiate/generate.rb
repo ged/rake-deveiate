@@ -11,8 +11,8 @@ module Rake::DevEiate::Generate
 
 
 	# Template files
-	README_TEMPLATE = Rake::DevEiate::DEVEIATE_DATADIR + 'README.erb'
-	HISTORY_TEMPLATE = Rake::DevEiate::DEVEIATE_DATADIR + 'History.erb'
+	README_TEMPLATE = 'README.erb'
+	HISTORY_TEMPLATE = 'History.erb'
 
 	# RVM metadata files
 	RUBY_VERSION_FILE = Rake::DevEiate::PROJECT_DIR + '.ruby-version'
@@ -91,17 +91,9 @@ module Rake::DevEiate::Generate
 
 	### Generate the given +filename+ from the template filed at +template_path+.
 	def generate_from_template( filename, template_path )
-		template_src = template_path.read( encoding: 'utf-8' )
-		template = ERB.new( template_src, trim_mode: '-' )
-
-		header_char = self.header_char_for( filename )
-
 		self.prompt.ok "Generating #{filename}..."
 		File.open( filename, FILE_CREATION_FLAGS, 0644, encoding: 'utf-8' ) do |io|
-			result = template.result_with_hash(
-				header_char: header_char,
-				project: self
-			)
+			result = self.load_and_render_template( template_path )
 			io.print( result )
 		end
 	end

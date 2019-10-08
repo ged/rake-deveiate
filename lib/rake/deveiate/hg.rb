@@ -293,7 +293,7 @@ module Rake::DevEiate::Hg
 
 
 	### Generate a new history file entry for the current version.
-	def do_hg_update_history( task, *args )
+	def do_hg_update_history( task, *args ) # Needs refactoring
 		unless self.history_file.readable?
 			self.prompt.error "History file is missing or unreadable."
 			abort
@@ -308,11 +308,15 @@ module Rake::DevEiate::Hg
 			abort
 		end
 
-		header, rest = self.history_file.read( encoding: 'utf-8' ).split( '---', 2 )
+		header, rest = self.history_file.read( encoding: 'utf-8' ).
+			split( /(?<=^---)/m, 2 )
 
-		if !header || header.empty?
-			self.prompt.error "History file needs a `---` marker to support updating."
-			abort
+		self.trace "Rest is: %p" % [ rest ]
+		if !rest || rest.empty?
+			self.prompt.warn "History file needs a header with a `---` marker to support updating."
+			self.prompt.say "Adding an auto-generated one."
+			rest = header
+			header = self.load_and_render_template( 'History.erb', self.history_file )
 		end
 
 		header_char = self.header_char_for( self.history_file )
@@ -325,13 +329,12 @@ module Rake::DevEiate::Hg
 
 		Tempfile.create( ['History', ext], encoding: 'utf-8' ) do |tmp_copy|
 			tmp_copy.print( header )
-			tmp_copy.puts '---'
 			tmp_copy.puts
 
 			tmp_copy.puts "%s %s [%s] %s" % [
 				header_char * 2,
 				version_tag,
-				Date.today.strftime( '%Y/%m/%d' ),
+				Date.today.strftime( '%Y-%m-%d' ),
 				self.authors.first,
 			]
 
@@ -339,6 +342,7 @@ module Rake::DevEiate::Hg
 			log_entries.each do |entry|
 				tmp_copy.puts "- %s" % [ entry.summary ]
 			end
+			tmp_copy.puts
 			tmp_copy.puts
 
 			tmp_copy.print( rest )
