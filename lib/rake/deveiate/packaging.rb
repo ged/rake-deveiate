@@ -14,15 +14,9 @@ module Rake::DevEiate::Packaging
 	def define_tasks
 		super if defined?( super )
 
-		pkg_dir = Rake::DevEiate::PKG_DIR
-		gem_path = pkg_dir + 
+		spec = self.make_gemspec
+		Gem::PackageTask.new( spec ).define
 
-		task :gem => 
-
-		Gem::PackageTask.new spec do |pkg|
-			pkg.need_tar = @need_tar
-			pkg.need_zip = @need_zip
-		end
 	end
 
 

@@ -10,7 +10,9 @@ module Rake::DevEiate::Releases
 
 	### Define release tasks.
 	def define_tasks
-		
+		task :release
+
+		super if defined?( super )
 	end
 
 

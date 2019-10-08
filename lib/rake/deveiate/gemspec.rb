@@ -43,6 +43,20 @@ module Rake::DevEiate::Gemspec
 		task :gemspec => gemspec_file
 
 		CLEAN.include( gemspec_file.to_s )
+
+		task( :gemspec_debug, &method(:do_gemspec_debug) )
+		task :debug => :gemspec_debug
+	end
+
+
+	### Task function -- output debugging for gemspec tasks.
+	def do_gemspec_debug( task, *args )
+		gemspec = self.make_gemspec
+		gemspec_src = gemspec.to_yaml
+
+		self.prompt.say( "Gemspec:", color: :bright_green )
+		self.prompt.say( indent(gemspec_src, 4) )
+		self.prompt.say( "\n" )
 	end
 
 
@@ -96,11 +110,21 @@ module Rake::DevEiate::Gemspec
 	end
 
 
-	### Return a version string 
+	### Return a version string
 	def prerelease_version
 		return "#{self.version.bump}.0.pre.#{Time.now.strftime("%Y%m%d%H%M%S")}"
 	end
 
+
+	#######
+	private
+	#######
+
+	### Return a copy of the given text prefixed by +spaces+ number of spaces.
+	def indent( text, spaces=4 )
+		prefix = ' ' * spaces
+		return text.gsub( /(?<=\A|\n)/m, prefix )
+	end
 
 end # module Rake::DevEiate::Gemspec
 

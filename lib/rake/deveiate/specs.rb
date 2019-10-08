@@ -12,8 +12,10 @@ module Rake::DevEiate::Specs
 	def define_tasks
 		super if defined?( super )
 
-		RSpec::Core::RakeTask.new( :spec ) do |t|
-			t.rspec_opts = "-cfd"
+		if Rake::DevEiate::SPEC_DIR.exist?
+			RSpec::Core::RakeTask.new( :spec ) do |t|
+				t.rspec_opts = "-cfd"
+			end
 		end
 
 	end

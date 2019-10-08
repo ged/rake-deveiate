@@ -283,59 +283,30 @@ class Rake::DevEiate < Rake::TaskLib
 		task :ci => :checkin
 		task :precheckin => [ :check, :gemspec, :spec ]
 
+		desc "Sanity-check the project"
 		task :check
+
+		desc "Update the history file"
+		task :update_history
 
 		desc "Package up and push a release"
 		task :release => [ :prerelease, :release_gem, :postrelease ]
 		task :prerelease
 		task :release_gem
 		task :postrelease
-
-		desc "Check to be sure that the Manifest doesn't need updating"
-		task :check_manifest
 	end
 
 
 	### Set up tasks for debugging the task library.
 	def define_debug_tasks
-		task( :debug ) do
-			summary = self.extract_summary
-			description = self.extract_description
-
-			self.prompt.say( "Documentation", color: :bright_green )
-			self.prompt.say( "Authors:" )
-			self.authors.each do |author|
-				self.prompt.say( " • " )
-				self.prompt.say( author, color: :bold )
-			end
-			self.prompt.say( "Summary: " )
-			self.prompt.say( summary, color: :bold )
-			self.prompt.say( "Description:" )
-			self.prompt.say( description, color: :bold )
-			self.prompt.say( "\n" )
-
-			self.prompt.say( "Project files:", color: :bright_green )
-			table = self.generate_project_files_table
-			if table.empty?
-				self.prompt.warn( "None." )
-			else
-				self.prompt.say( table.render(:unicode, padding: [0,1]) )
-			end
-			self.prompt.say( "\n" )
-
-			self.prompt.say( "Dependencies", color: :bright_green )
-			table = self.generate_dependencies_table
-			if table.empty?
-				self.prompt.warn( "None." )
-			else
-				self.prompt.say( table.render(:unicode, padding: [0,1]) )
-			end
-			self.prompt.say( "\n" )
-
-			self.prompt.say( "Will push releases to:", color: :bright_green )
-			self.prompt.say( "  #{self.gemserver}" )
-			self.prompt.say( "\n" )
+		task( :base_debug ) do
+			self.output_documentation_debugging
+			self.output_project_files_debugging
+			self.output_dependency_debugging
+			self.output_release_debugging
 		end
+
+		task :debug => :base_debug
 	end
 
 
@@ -602,6 +573,60 @@ class Rake::DevEiate < Rake::TaskLib
 			header_char: header_char,
 			project: self
 		)
+	end
+
+
+	### Output debugging information about documentation.
+	def output_documentation_debugging
+		summary = self.extract_summary
+		description = self.extract_description
+
+		self.prompt.say( "Documentation", color: :bright_green )
+		self.prompt.say( "Authors:" )
+		self.authors.each do |author|
+			self.prompt.say( " • " )
+			self.prompt.say( author, color: :bold )
+		end
+		self.prompt.say( "Summary: " )
+		self.prompt.say( summary, color: :bold )
+		self.prompt.say( "Description:" )
+		self.prompt.say( description, color: :bold )
+		self.prompt.say( "\n" )
+	end
+
+
+	### Output debugging info related to the list of project files the build
+	### operates on.
+	def output_project_files_debugging
+		self.prompt.say( "Project files:", color: :bright_green )
+		table = self.generate_project_files_table
+		if table.empty?
+			self.prompt.warn( "None." )
+		else
+			self.prompt.say( table.render(:unicode, padding: [0,1]) )
+		end
+		self.prompt.say( "\n" )
+	end
+
+
+	### Output debugging about the project's dependencies.
+	def output_dependency_debugging
+		self.prompt.say( "Dependencies", color: :bright_green )
+		table = self.generate_dependencies_table
+		if table.empty?
+			self.prompt.warn( "None." )
+		else
+			self.prompt.say( table.render(:unicode, padding: [0,1]) )
+		end
+		self.prompt.say( "\n" )
+	end
+
+
+	### Output debugging regarding where releases will be posted.
+	def output_release_debugging
+		self.prompt.say( "Will push releases to:", color: :bright_green )
+		self.prompt.say( "  #{self.gemserver}" )
+		self.prompt.say( "\n" )
 	end
 
 
