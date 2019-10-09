@@ -16,6 +16,28 @@ module Rake::DevEiate::Gemspec
 	AUTHOR_PATTERN = /^(?<name>.*)\s<(?<email>.*)>$/
 
 
+	##
+	# The path to the file used to sign released gems
+	attr_accessor :signing_key
+
+
+	### Set some defaults when the task lib is set up.
+	def setup( _name, **options )
+		super if defined?( super )
+
+		@signing_key = options[:signing_key] || Gem.default_key_path
+
+		@gemspec = nil
+	end
+
+
+	### Reset any cached data when project attributes change.
+	def reset
+		super if defined?( super )
+		@gemspec = nil
+	end
+
+
 	### Define gemspec tasks
 	def define_tasks
 		super if defined?( super )
@@ -51,12 +73,25 @@ module Rake::DevEiate::Gemspec
 
 	### Task function -- output debugging for gemspec tasks.
 	def do_gemspec_debug( task, *args )
-		gemspec = self.make_gemspec
+		gemspec = self.gemspec
 		gemspec_src = gemspec.to_yaml
 
 		self.prompt.say( "Gemspec:", color: :bright_green )
 		self.prompt.say( indent(gemspec_src, 4) )
 		self.prompt.say( "\n" )
+	end
+
+
+	### Return the project's Gem::Specification, creating it if necessary.
+	def gemspec
+		return @gemspec ||= self.make_gemspec
+	end
+
+
+	### Validate the gemspec, raising a Gem::InvalidSpecificationException if it's
+	### not valid.
+	def validate_gemspec( packaging=true, strict=false )
+		return self.gemspec.validate( packaging, strict )
 	end
 
 
@@ -66,10 +101,11 @@ module Rake::DevEiate::Gemspec
 
 		spec.name         = self.name
 		spec.description  = self.description
+		spec.homepage     = self.homepage
 		spec.summary      = self.summary || self.extract_summary
 		spec.files        = self.project_files
-		spec.signing_key  = File.expand_path( "~/.gem/gem-private_key.pem" )
-		spec.cert_chain   = self.cert_files
+		spec.signing_key  = self.resolve_signing_key.to_s
+		spec.cert_chain   = self.cert_files.map( &File.method(:expand_path) ).to_a
 		spec.version      = self.version
 		spec.licenses     = self.licenses
 		spec.date         = Date.today
@@ -113,6 +149,14 @@ module Rake::DevEiate::Gemspec
 	### Return a version string
 	def prerelease_version
 		return "#{self.version.bump}.0.pre.#{Time.now.strftime("%Y%m%d%H%M%S")}"
+	end
+
+
+	### Resolve the path of the signing key
+	def resolve_signing_key
+		path = Pathname( self.signing_key ).expand_path
+		path = path.readlink if path.symlink?
+		return path
 	end
 
 

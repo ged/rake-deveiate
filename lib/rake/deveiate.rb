@@ -135,15 +135,16 @@ class Rake::DevEiate < Rake::TaskLib
 
 		@title         = self.extract_default_title
 		@authors       = self.extract_authors
+		@homepage      = self.extract_homepage
 		@description   = self.extract_description || DEFAULT_DESCRIPTION
 		@summary       = nil
 		@dependencies  = self.find_dependencies
 
 		@gemserver     = DEFAULT_GEMSERVER
 
-		self.load_task_libraries
+		super()
 
-		super() if defined?( super )
+		self.load_task_libraries
 
 		if block
 			if block.arity.nonzero?
@@ -178,7 +179,7 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The Gem::Version of the current library, extracted from the top-level
 	# namespace.
-	attr_accessor :version
+	attr_reader :version
 
 	##
 	# The README of the project as an RDoc::Markup::Document
@@ -220,6 +221,10 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The gem's authors in the form of strings in the format: `Name <email>`
 	attr_accessor :authors
+
+	##
+	# The URI of the project's homepage as a String
+	attr_accessor :homepage
 
 	##
 	# The Gem::RequestSet that describes the gem's dependencies
@@ -394,6 +399,20 @@ class Rake::DevEiate < Rake::TaskLib
 			name, email = raw.split( ' mailto:', 2 )
 			"%s <%s>" % [ name, email ]
 		end
+	end
+
+
+	### Extract the URI of the homepage from the `home` item of the first NOTE-type
+	### list in the README. Returns +nil+ if no such URI could be found.
+	def extract_homepage
+		return fail_extraction(:homepage, "no README") unless self.readme
+
+		list = self.readme.parts.find {|part| RDoc::Markup::List === part && part.type == :NOTE } or
+			return fail_extraction(:homepage, "No NOTE list")
+		item = list.items.find {|item| item.label.include?('home') } or
+			return fail_extraction(:homepage, "No `home` item")
+
+		return item.parts.first.text
 	end
 
 
@@ -639,6 +658,14 @@ class Rake::DevEiate < Rake::TaskLib
 		raise ScriptError, "invalid gem name" unless
 			Gem::SpecificationPolicy::VALID_NAME_PATTERN.match?( gemname )
 		return gemname.freeze
+	end
+
+
+	### Log a reason that extraction of the specified +item+ failed for the given
+	### +reason+ and then return +nil+.
+	def fail_extraction( item, reason )
+		self.prompt.warn "Extraction of %s failed: %s" % [ item, reason ]
+		return nil
 	end
 
 end # class Rake::DevEiate
