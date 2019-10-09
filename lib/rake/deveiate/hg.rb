@@ -96,6 +96,9 @@ module Rake::DevEiate::Hg
 			desc "Check the current code in if tests pass"
 			task( :checkin => [:pull, :newfiles, :precheckin, COMMIT_MSG_FILE.to_s], &method(:do_hg_checkin) )
 
+			desc "Mercurial-specific post-release hook"
+			task( :postrelease, &method(:do_hg_postrelease) )
+
 			desc "Push to the default origin repo (if there is one)"
 			task( :push, &method(:do_hg_push) )
 
@@ -120,6 +123,7 @@ module Rake::DevEiate::Hg
 		task :prerelease => 'hg:prerelease'
 		task :precheckin => 'hg:precheckin'
 		task :debug => 'hg:debug'
+		task :postrelease => 'hg:postrelease'
 
 		desc "Update the history file with the changes since the last version tag."
 		task :update_history => 'hg:update_history'
@@ -161,9 +165,19 @@ module Rake::DevEiate::Hg
 		rev = self.hg.identify
 		self.prompt.ok "Tagging rev %s as %s" % [ rev, pkg_version_tag ]
 		self.hg.tag( pkg_version_tag )
+	end
 
-		# Offer to push
-		Rake::Task['hg:push'].invoke
+
+	### The body of the hg:postrelease task.
+	def do_hg_postrelease( task, args )
+		self.prompt.say "Adding release artifacts..."
+		self.hg.add( 'checksum' )
+		self.hg.commit( 'checksum', message: "Adding release checksum." )
+
+		self.prompt.say "Publicising commits..."
+		self.hg.phase( :public )
+
+		Rake::Take['hg:push'].invoke
 	end
 
 
@@ -275,7 +289,7 @@ module Rake::DevEiate::Hg
 
 	### Check the history file against the list of release tags in the working copy
 	### and ensure there's an entry for each tag.
-	def do_hg_check_history( task, *args )
+	def do_hg_check_history( task, args )
 		unless self.history_file.readable?
 			self.prompt.error "History file is missing or unreadable."
 			abort
@@ -293,7 +307,7 @@ module Rake::DevEiate::Hg
 
 
 	### Generate a new history file entry for the current version.
-	def do_hg_update_history( task, *args ) # Needs refactoring
+	def do_hg_update_history( task, args ) # Needs refactoring
 		unless self.history_file.readable?
 			self.prompt.error "History file is missing or unreadable."
 			abort
@@ -361,7 +375,7 @@ module Rake::DevEiate::Hg
 
 
 	### Show debugging information.
-	def do_hg_debug( task, *args )
+	def do_hg_debug( task, args )
 		self.prompt.say( "Hg Info", color: :bright_green )
 
 		self.prompt.say( "Mercurial version: " )

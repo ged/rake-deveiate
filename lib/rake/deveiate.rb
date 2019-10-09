@@ -46,15 +46,16 @@ class Rake::DevEiate < Rake::TaskLib
 	DEFAULT_VERSION = '0.1.0'
 
 	# Paths
-	PROJECT_DIR = Pathname( '.' )
+	PROJECT_DIR  = Pathname( '.' )
 
-	DOCS_DIR    = PROJECT_DIR + 'docs'
-	LIB_DIR     = PROJECT_DIR + 'lib'
-	EXT_DIR     = PROJECT_DIR + 'ext'
-	SPEC_DIR    = PROJECT_DIR + 'spec'
-	DATA_DIR    = PROJECT_DIR + 'data'
-	CERTS_DIR   = PROJECT_DIR + 'certs'
-	PKG_DIR     = PROJECT_DIR + 'pkg'
+	DOCS_DIR     = PROJECT_DIR + 'docs'
+	LIB_DIR      = PROJECT_DIR + 'lib'
+	EXT_DIR      = PROJECT_DIR + 'ext'
+	SPEC_DIR     = PROJECT_DIR + 'spec'
+	DATA_DIR     = PROJECT_DIR + 'data'
+	CERTS_DIR    = PROJECT_DIR + 'certs'
+	PKG_DIR      = PROJECT_DIR + 'pkg'
+	CHECKSUM_DIR = PROJECT_DIR + 'checksum'
 
 	DEFAULT_MANIFEST_FILE = PROJECT_DIR + 'Manifest.txt'
 	DEFAULT_README_FILE = PROJECT_DIR + 'README.md'
@@ -299,6 +300,9 @@ class Rake::DevEiate < Rake::TaskLib
 		task :prerelease
 		task :release_gem
 		task :postrelease
+
+		task :spec
+		task :test => :spec
 	end
 
 

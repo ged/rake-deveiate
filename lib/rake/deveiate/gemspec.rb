@@ -66,13 +66,15 @@ module Rake::DevEiate::Gemspec
 
 		CLEAN.include( gemspec_file.to_s )
 
+		task :checkin => :gemspec
+
 		task( :gemspec_debug, &method(:do_gemspec_debug) )
 		task :debug => :gemspec_debug
 	end
 
 
 	### Task function -- output debugging for gemspec tasks.
-	def do_gemspec_debug( task, *args )
+	def do_gemspec_debug( task, args )
 		gemspec = self.gemspec
 		gemspec_src = gemspec.to_yaml
 

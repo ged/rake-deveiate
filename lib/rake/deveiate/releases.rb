@@ -11,20 +11,27 @@ module Rake::DevEiate::Releases
 
 	### Define release tasks.
 	def define_tasks
-		task :release
-
 		super if defined?( super )
+
+		checksum_dir = Rake::DevEiate::CHECKSUM_DIR
+		checksum_path = checksum_dir + "#{self.gem_filename}.sha512"
+
+		directory( checksum_dir )
+
+		file( checksum_path => [self.gem_path, checksum_dir], &method(:do_make_release_checksum) )
+		task :add_release_checksum => checksum_path
+
+		task :release_gem => :add_release_checksum do
+			sh( Gem.ruby, "-S", "gem", "push", self.gem_path.to_s )
+		end
+
 	end
 
 
-
-	### (Undocumented)
-	def method_name
-		gem_path = self.gem_path
-		checksum = Digest::SHA512.new.hexdigest(  )
-		checksum_path = 'checksum/gemname-version.gem.sha512'
-		File.open(checksum_path, 'w' ) {|f| f.write(checksum) }
-		# add and commit 'checksum_path'
+	### Create a checksum for a release gemfile
+	def do_make_release_checksum( task, args )
+		checksum = Digest::SHA512.new.hexdigest( self.gem_path.read )
+		File.open( task.name, 'w', encoding: 'us-ascii' ) {|f| f.write(checksum) }
 	end
 
 end # module Rake::DevEiate::Releases

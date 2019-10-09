@@ -50,20 +50,20 @@ module Rake::DevEiate::Generate
 
 
 	### Generate a README file if one doesn't already exist. Error if one does.
-	def do_generate_readme_file( task, *args )
+	def do_generate_readme_file( task, args )
 		self.generate_from_template( task.name, README_TEMPLATE )
 	end
 
 
 
 	### Generate a History file if one doesn't already exist. Error if one does.
-	def do_generate_history_file( task, *args )
+	def do_generate_history_file( task, args )
 		self.generate_from_template( task.name, HISTORY_TEMPLATE )
 	end
 
 
 	### Generate a manifest with a default set of files listed.
-	def do_generate_manifest_file( task, *args )
+	def do_generate_manifest_file( task, args )
 		self.prompt.ok "Generating #{task.name}..."
 		File.open( task.name, FILE_CREATION_FLAGS, 0644, encoding: 'utf-8' ) do |io|
 			io.puts( *self.project_files )
@@ -72,7 +72,7 @@ module Rake::DevEiate::Generate
 
 
 	### Generate a file that sets the project's working Ruby version.
-	def do_generate_ruby_version_file( task, *args )
+	def do_generate_ruby_version_file( task, args )
 		self.prompt.ok "Generating #{task.name}..."
 		File.open( task.name, FILE_CREATION_FLAGS, 0644, encoding: 'utf-8' ) do |io|
 			io.puts( RUBY_VERSION.sub(/\.\d+$/, '') )
@@ -81,7 +81,7 @@ module Rake::DevEiate::Generate
 
 
 	### Generate a file that sets the project's gemset
-	def do_generate_gemset_file( task, *args )
+	def do_generate_gemset_file( task, args )
 		self.prompt.ok "Generating #{task.name}..."
 		File.open( task.name, FILE_CREATION_FLAGS, 0644, encoding: 'utf-8' ) do |io|
 			io.puts( self.name )
