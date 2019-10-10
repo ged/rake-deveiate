@@ -189,6 +189,12 @@ module Rake::DevEiate::Hg
 			self.hg.phase( public: true )
 		end
 
+		if Hglib.extension_enabled?( 'topic' )
+			if self.prompt.yes?( "Clear the current topic?" )
+				
+			end
+		end
+
 		Rake::Task['hg:push'].invoke
 	end
 
