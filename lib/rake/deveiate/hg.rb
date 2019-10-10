@@ -170,12 +170,16 @@ module Rake::DevEiate::Hg
 
 	### The body of the hg:postrelease task.
 	def do_hg_postrelease( task, args )
-		self.prompt.say "Adding release artifacts..."
-		self.hg.add( 'checksum' )
-		self.hg.commit( 'checksum', message: "Adding release checksum." )
+		if self.hg.status( 'checksum', unknown: true ).any?
+			self.prompt.say "Adding release artifacts..."
+			self.hg.add( 'checksum' )
+			self.hg.commit( 'checksum', message: "Adding release checksum." )
+		end
 
-		self.prompt.say "Publicising commits..."
-		self.hg.phase( :public )
+		if self.prompt.yes?( "Move released changesets to public phase?" )
+			self.prompt.say "Publicising changesets..."
+			self.hg.phase( :public )
+		end
 
 		Rake::Take['hg:push'].invoke
 	end
@@ -498,7 +502,7 @@ module Rake::DevEiate::Hg
 	### Add the list of +pathnames+ to the .hgignore list.
 	def hg_ignore_files( *pathnames )
 		patterns = pathnames.flatten.collect do |path|
-			'^' + Regexp.escape(path) + '$'
+			'^' + Regexp.escape( path.to_s ) + '$'
 		end
 		self.trace "Ignoring %d files." % [ pathnames.length ]
 

@@ -30,8 +30,10 @@ module Rake::DevEiate::Releases
 
 	### Create a checksum for a release gemfile
 	def do_make_release_checksum( task, args )
-		checksum = Digest::SHA512.new.hexdigest( self.gem_path.read )
-		File.open( task.name, 'w', encoding: 'us-ascii' ) {|f| f.write(checksum) }
+		if self.prompt.yes?( "Make a checksum for this release?" )
+			checksum = Digest::SHA512.new.hexdigest( self.gem_path.read )
+			File.open( task.name, 'w', encoding: 'us-ascii' ) {|f| f.write(checksum) }
+		end
 	end
 
 end # module Rake::DevEiate::Releases

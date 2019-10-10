@@ -18,6 +18,11 @@ module Rake::DevEiate::Specs
 			end
 		end
 
+		task :coverage do
+			ENV['COVERAGE'] = 'yes'
+			Rake::Task[:spec].invoke
+		end
+
 	end
 
 end # module Rake::DevEiate::Specs
