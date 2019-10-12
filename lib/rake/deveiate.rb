@@ -144,6 +144,8 @@ class Rake::DevEiate < Rake::TaskLib
 
 		@gemserver     = DEFAULT_GEMSERVER
 
+		@publish_to    = nil
+
 		super()
 
 		self.load_task_libraries
@@ -235,6 +237,10 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The gemserver to push gems to
 	attr_accessor :gemserver
+
+	##
+	# The rsync-compatible target to publish documentation to.
+	attr_accessor :publish_to
 
 
 	#

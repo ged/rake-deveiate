@@ -27,6 +27,17 @@ module Rake::DevEiate::Docs
 			rdoc.rdoc_dir = Rake::DevEiate::DOCS_DIR.to_s
 		end
 
+
+		if self.publish_to
+			target = self.publish_to
+
+			desc "Publish API docs to #{target}"
+			task :publish_docs => :docs do
+				target = File.join( target, self.name ) unless target.end_with?( self.name )
+				sh 'rsync', '-COva', Rake::DevEiate::DOCS_DIR.to_s + '/', target
+			end
+		end
+
 	end
 
 end # module Rake::DevEiate::Docs

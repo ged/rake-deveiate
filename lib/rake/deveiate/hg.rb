@@ -491,11 +491,7 @@ module Rake::DevEiate::Hg
 	def edit_commit_log( logfile )
 		diff = self.hg.diff
 
-		File.open( logfile, 'w' ) do |fh|
-			fh.print( diff )
-		end
-
-		TTY::Editor.open( logfile )
+		TTY::Editor.open( logfile, content: diff )
 	end
 
 
