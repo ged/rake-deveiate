@@ -383,7 +383,7 @@ module Rake::DevEiate::Hg
 		self.prompt.say( "Hg Info", color: :bright_green )
 
 		self.prompt.say( "Mercurial version: " )
-		self.prompt.say( self.hg.version, color: :bold )
+		self.prompt.say( Hglib.version, color: :bold )
 		self.prompt.say( "Release tag prefix: " )
 		self.prompt.say( self.release_tag_prefix, color: :bold )
 
