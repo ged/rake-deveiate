@@ -1,0 +1,15 @@
+image: freebsd/12.x
+packages:
+  - ruby
+  - rubygem-gems
+  - rubygem-rake
+sources:
+  - hg+https://hg.sr.ht/~ged/rake-deveiate
+tasks:
+  - setup: |
+      cd rake-deveiate
+      gem install --user-install -Ng
+  - test: |
+      export PATH=$PATH:$(ruby -r rubygems -e 'puts Gem.user_dir')/bin
+      cd rake-deveiate
+      COVERAGE=1 rspec -cfd
