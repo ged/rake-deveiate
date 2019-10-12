@@ -178,10 +178,10 @@ module Rake::DevEiate::Hg
 
 		if self.prompt.yes?( "Move released changesets to public phase?" )
 			self.prompt.say "Publicising changesets..."
-			self.hg.phase( :public )
+			self.hg.phase( public: true )
 		end
 
-		Rake::Take['hg:push'].invoke
+		Rake::Task['hg:push'].invoke
 	end
 
 
