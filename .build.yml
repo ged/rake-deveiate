@@ -12,4 +12,4 @@ tasks:
   - test: |
       export PATH=$PATH:$(ruby -r rubygems -e 'puts Gem.user_dir')/bin
       cd rake-deveiate
-      COVERAGE=1 rspec -cfd
+      COVERAGE=1 rake debug
