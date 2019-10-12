@@ -52,6 +52,7 @@ class Rake::DevEiate < Rake::TaskLib
 	LIB_DIR      = PROJECT_DIR + 'lib'
 	EXT_DIR      = PROJECT_DIR + 'ext'
 	SPEC_DIR     = PROJECT_DIR + 'spec'
+	INT_SPEC_DIR = PROJECT_DIR + 'integration'
 	DATA_DIR     = PROJECT_DIR + 'data'
 	CERTS_DIR    = PROJECT_DIR + 'certs'
 	PKG_DIR      = PROJECT_DIR + 'pkg'
@@ -301,8 +302,10 @@ class Rake::DevEiate < Rake::TaskLib
 		task :release_gem
 		task :postrelease
 
+		desc "Run all the project's tests"
+		task :test
 		task :spec
-		task :test => :spec
+		task :integration
 	end
 
 
