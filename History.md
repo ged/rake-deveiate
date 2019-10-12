@@ -2,6 +2,13 @@
 
 ---
 
+## v0.1.1 [2019-10-12] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Fix a few typos.
+
+
 ## v0.1.0 [2019/10/02] Michael Granger <ged@FaerieMUD.org>
 
 First release.
