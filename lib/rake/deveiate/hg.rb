@@ -88,13 +88,13 @@ module Rake::DevEiate::Hg
 			task( :update_and_clobber, &method(:do_hg_update_and_clobber) )
 
 			desc "Mercurial-specific pre-checkin hook"
-			task :precheckin
+			task :precheckin => [ :pull, :check_for_changes ]
 
 			desc "Mercurial-specific pre-release hook"
 			task :prerelease => 'hg:check_history'
 
 			desc "Check the current code in if tests pass"
-			task( :checkin => [:pull, :newfiles, :precheckin, COMMIT_MSG_FILE.to_s], &method(:do_hg_checkin) )
+			task( :checkin => [:newfiles, :precheckin, COMMIT_MSG_FILE.to_s], &method(:do_hg_checkin) )
 
 			desc "Mercurial-specific post-release hook"
 			task( :postrelease, &method(:do_hg_postrelease) )
@@ -113,6 +113,7 @@ module Rake::DevEiate::Hg
 			desc "Generate and edit a new version entry in the history file"
 			task( :update_history, &method(:do_hg_update_history) )
 
+			task( :check_for_changes, &method(:do_hg_check_for_changes) )
 			task( :debug, &method(:do_hg_debug) )
 		end
 
@@ -305,6 +306,16 @@ module Rake::DevEiate::Hg
 		unless missing_tags.empty?
 			self.prompt.error "%s needs updating; missing entries for tags: %s" %
 				[ self.history_file, missing_tags.join(', ') ]
+			abort
+		end
+	end
+
+
+	### Check the status of the repo and ensure there are outstanding changes. If there
+	### are no changes, abort.
+	def do_hg_check_for_changes( task, args )
+		unless self.hg.dirty?
+			self.prompt.error "Working copy is clean."
 			abort
 		end
 	end

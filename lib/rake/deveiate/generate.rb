@@ -1,6 +1,7 @@
 # -*- ruby -*-
 # frozen_string_literal: true
 
+require 'tempfile'
 require 'erb'
 
 require 'rake/deveiate' unless defined?( Rake::DevEiate )
@@ -38,6 +39,7 @@ module Rake::DevEiate::Generate
 		task( RUBY_VERSION_FILE, &method(:do_generate_ruby_version_file) )
 		task( GEMSET_FILE, &method(:do_generate_gemset_file) )
 
+		desc "Generate any missing project files."
 		task :generate => [
 			self.readme_file,
 			self.history_file,
@@ -45,6 +47,9 @@ module Rake::DevEiate::Generate
 			RUBY_VERSION_FILE,
 			GEMSET_FILE,
 		]
+
+		desc "Diff the manifest file against the default set of project files."
+		task( :diff_manifest, &method(:do_diff_manifest) )
 	end
 
 
@@ -85,6 +90,18 @@ module Rake::DevEiate::Generate
 		self.prompt.ok "Generating #{task.name}..."
 		File.open( task.name, FILE_CREATION_FLAGS, 0644, encoding: 'utf-8' ) do |io|
 			io.puts( self.name )
+		end
+	end
+
+
+	### Task body for the `diff_manifest` task
+	def do_diff_manifest( task, args )
+		Tempfile.open( ['Manifest','.txt'], Rake::DevEiate::PROJECT_DIR ) do |io|
+			file_list = self.default_manifest.to_a
+			io.puts( *file_list )
+			io.flush
+
+			sh 'diff', '-ub', self.manifest_file.to_s, io.path
 		end
 	end
 

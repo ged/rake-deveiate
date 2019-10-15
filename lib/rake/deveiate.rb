@@ -61,13 +61,18 @@ class Rake::DevEiate < Rake::TaskLib
 	DEFAULT_MANIFEST_FILE = PROJECT_DIR + 'Manifest.txt'
 	DEFAULT_README_FILE = PROJECT_DIR + 'README.md'
 	DEFAULT_HISTORY_FILE = PROJECT_DIR + 'History.md'
+
 	DEFAULT_PROJECT_FILES = Rake::FileList[
 		'*.{rdoc,md,txt}',
 		'bin/*',
-		'lib/*.rb', 'lib/**/*.rb',
+		'lib/**/*.rb',
 		'ext/*.[ch]', 'ext/**/*.[ch]',
-		'data/**/*'
+		'data/**/*',
+		'spec/**/*.rb',
 	]
+	DEFAULT_PROJECT_FILES.exclude( 'Manifest*.txt' )
+
+
 
 	# The default license for the project in SPDX form: https://spdx.org/licenses
 	DEFAULT_LICENSE = 'BSD-3-Clause'
@@ -291,10 +296,10 @@ class Rake::DevEiate < Rake::TaskLib
 		task( :default => :spec )
 
 		desc "Check in the current changes"
-		task :checkin => :precheckin
+		task :checkin => [ :check, :gemspec, :test ]
 		task :commit => :checkin
 		task :ci => :checkin
-		task :precheckin => [ :check, :gemspec, :spec ]
+		task :precheckin
 
 		desc "Sanity-check the project"
 		task :check
@@ -463,8 +468,15 @@ class Rake::DevEiate < Rake::TaskLib
 		else
 			self.prompt.warn "No manifest (%s): falling back to a default list" %
 				[ self.manifest_file ]
-			return DEFAULT_PROJECT_FILES.dup
+			return self.default_manifest
 		end
+	end
+
+
+	### Return the Rake::FileList that's used in lieu of the manifest file if it
+	### isn't present.
+	def default_manifest
+		return DEFAULT_PROJECT_FILES.dup
 	end
 
 
