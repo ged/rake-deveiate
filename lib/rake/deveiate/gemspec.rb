@@ -66,7 +66,7 @@ module Rake::DevEiate::Gemspec
 
 		CLEAN.include( gemspec_file.to_s )
 
-		task :checkin => :gemspec
+		task :precheckin => :gemspec
 
 		task( :gemspec_debug, &method(:do_gemspec_debug) )
 		task :debug => :gemspec_debug

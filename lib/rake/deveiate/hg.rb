@@ -61,7 +61,14 @@ module Rake::DevEiate::Hg
 		return unless File.directory?( '.hg' )
 
 		file COMMIT_MSG_FILE.to_s do |task|
-			edit_commit_log( task.name )
+			commit_log = Pathname( task.name )
+
+			edit_commit_log( commit_log )
+			unless commit_log.size?
+				self.prompt.error "Empty commit message; aborting."
+				commit_log.unlink if commit_log.exist?
+				abort
+			end
 		end
 
 		CLEAN.include( COMMIT_MSG_FILE.to_s )
@@ -88,13 +95,13 @@ module Rake::DevEiate::Hg
 			task( :update_and_clobber, &method(:do_hg_update_and_clobber) )
 
 			desc "Mercurial-specific pre-checkin hook"
-			task :precheckin => [ :pull, :check_for_changes ]
+			task :precheckin => [ :pull, :newfiles, :check_for_changes ]
+
+			desc "Check the current code in if tests pass"
+			task( :checkin => COMMIT_MSG_FILE.to_s, &method(:do_hg_checkin) )
 
 			desc "Mercurial-specific pre-release hook"
 			task :prerelease => 'hg:check_history'
-
-			desc "Check the current code in if tests pass"
-			task( :checkin => [:newfiles, :precheckin, COMMIT_MSG_FILE.to_s], &method(:do_hg_checkin) )
 
 			desc "Mercurial-specific post-release hook"
 			task( :postrelease, &method(:do_hg_postrelease) )
@@ -119,16 +126,16 @@ module Rake::DevEiate::Hg
 
 
 		# Hook some generic tasks to the mercurial-specific ones
-		task :ci => 'hg:checkin'
+		task :checkin => 'hg:checkin'
+		task :precheckin => 'hg:precheckin'
 
 		task :prerelease => 'hg:prerelease'
-		task :precheckin => 'hg:precheckin'
-		task :debug => 'hg:debug'
 		task :postrelease => 'hg:postrelease'
 
 		desc "Update the history file with the changes since the last version tag."
 		task :update_history => 'hg:update_history'
 
+		task :debug => 'hg:debug'
 	rescue ::Exception => err
 		$stderr.puts "%s while defining Mercurial tasks: %s" % [ err.class.name, err.message ]
 		raise
@@ -149,6 +156,7 @@ module Rake::DevEiate::Hg
 		end
 
 		pkg_version_tag = self.current_version_tag
+		rev = self.hg.identity.id
 
 		# Look for a tag for the current release version, and if it exists abort
 		if self.hg.tags.find {|tag| tag.name == pkg_version_tag }
@@ -157,15 +165,14 @@ module Rake::DevEiate::Hg
 		end
 
 		if self.sign_tags
-			message = "Signing %s" % [ pkg_version_tag ]
+			message = "Signing %s" % [ rev ]
 			self.prompt.ok( message )
-			self.hg.sign( message: message )
+			self.hg.sign( rev, message: message )
 		end
 
 		# Tag the current rev
-		rev = self.hg.identify
 		self.prompt.ok "Tagging rev %s as %s" % [ rev, pkg_version_tag ]
-		self.hg.tag( pkg_version_tag )
+		self.hg.tag( pkg_version_tag, rev: rev )
 	end
 
 

@@ -296,7 +296,7 @@ class Rake::DevEiate < Rake::TaskLib
 		task( :default => :spec )
 
 		desc "Check in the current changes"
-		task :checkin => [ :check, :gemspec, :test ]
+		task :checkin => [ :precheckin, :check, :test ]
 		task :commit => :checkin
 		task :ci => :checkin
 		task :precheckin
