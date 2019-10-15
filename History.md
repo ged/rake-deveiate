@@ -2,6 +2,15 @@
 
 ---
 
+## v0.3.0 [2019-10-14] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Add a `diff_manifest` task
+- Run checkin tasks in an order that makes more sense
+- Fix the sign/tag sequence in `release` to allow `sigcheck`ing the tag.
+
+
 ## v0.2.0 [2019-10-12] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
