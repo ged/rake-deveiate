@@ -41,17 +41,12 @@ module Rake::DevEiate::Hg
 		super if defined?( super )
 
 		@release_tag_prefix = options[:release_tag_prefix] || DEFAULT_RELEASE_TAG_PREFIX
-		@sign_tags          = options[:sign_tags] || true
 	end
 
 
 	##
 	# The prefix to use for version tags
 	attr_accessor :release_tag_prefix
-
-	##
-	# Boolean: if true, sign tags after creating them
-	attr_accessor :sign_tags
 
 
 	### Define version-control tasks
@@ -173,6 +168,14 @@ module Rake::DevEiate::Hg
 		# Tag the current rev
 		self.prompt.ok "Tagging rev %s as %s" % [ rev, pkg_version_tag ]
 		self.hg.tag( pkg_version_tag, rev: rev )
+
+		# Sign the tag
+		if self.hg.extension_enabled?( :gpg )
+			message = "Sign %s?" % [ pkg_version_tag ]
+			if self.prompt.yes?( message )
+				self.hg.sign( pkg_version_tag, message: message )
+			end
+		end
 	end
 
 
@@ -189,9 +192,10 @@ module Rake::DevEiate::Hg
 			self.hg.phase( public: true )
 		end
 
-		if Hglib.extension_enabled?( 'topic' )
-			if self.prompt.yes?( "Clear the current topic?" )
-				
+		if self.hg.extension_enabled?( :topic )
+			current_topic = self.hg.topic
+			if current_topic && self.prompt.yes?( "Clear the current topic (%s)?" %[current_topic] )
+				self.hg.topic( clear: true )
 			end
 		end
 
