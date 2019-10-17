@@ -2,6 +2,18 @@
 
 ---
 
+## v0.4.0 [2019-10-16] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Offer to clear the current topic on release
+- Add support for the `allowed_push_host` gem attribute
+
+Bugfixes:
+
+- Only try to sign if the gpg extension is loaded
+
+
 ## v0.3.0 [2019-10-14] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
