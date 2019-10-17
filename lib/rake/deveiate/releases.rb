@@ -22,7 +22,11 @@ module Rake::DevEiate::Releases
 		task :add_release_checksum => checksum_path
 
 		task :release_gem => :add_release_checksum do
-			sh( Gem.ruby, "-S", "gem", "push", self.gem_path.to_s )
+			gemserver = self.allowed_push_host || Rake::DevEiate::DEFAULT_GEMSERVER
+
+			if self.prompt.yes?( "Push a new gem to #{gemserver}?" ) {|q| q.default = false }
+				sh( Gem.ruby, "-S", "gem", "push", self.gem_path.to_s )
+			end
 		end
 
 	end

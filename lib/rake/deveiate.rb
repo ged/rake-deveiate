@@ -147,8 +147,6 @@ class Rake::DevEiate < Rake::TaskLib
 		@summary       = nil
 		@dependencies  = self.find_dependencies
 
-		@gemserver     = DEFAULT_GEMSERVER
-
 		@publish_to    = nil
 
 		super()
@@ -241,7 +239,7 @@ class Rake::DevEiate < Rake::TaskLib
 
 	##
 	# The gemserver to push gems to
-	attr_accessor :gemserver
+	attr_accessor :allowed_push_host
 
 	##
 	# The rsync-compatible target to publish documentation to.
@@ -668,9 +666,11 @@ class Rake::DevEiate < Rake::TaskLib
 
 	### Output debugging regarding where releases will be posted.
 	def output_release_debugging
-		self.prompt.say( "Will push releases to:", color: :bright_green )
-		self.prompt.say( "  #{self.gemserver}" )
-		self.prompt.say( "\n" )
+		if self.allowed_push_host
+			self.prompt.say( "Only allowed to push releases to:", color: :bright_green )
+			self.prompt.say( "  #{self.allowed_push_host}" )
+			self.prompt.say( "\n" )
+		end
 	end
 
 

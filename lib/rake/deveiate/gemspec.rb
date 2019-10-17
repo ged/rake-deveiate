@@ -112,6 +112,8 @@ module Rake::DevEiate::Gemspec
 		spec.licenses     = self.licenses
 		spec.date         = Date.today
 
+		spec.allowed_push_host = self.allowed_push_host if self.allowed_push_host
+
 		self.authors.each do |author|
 			if ( m = author.match(AUTHOR_PATTERN) )
 				spec.authors ||= []
