@@ -159,12 +159,6 @@ module Rake::DevEiate::Hg
 			fail
 		end
 
-		if self.sign_tags
-			message = "Signing %s" % [ rev ]
-			self.prompt.ok( message )
-			self.hg.sign( rev, message: message )
-		end
-
 		# Tag the current rev
 		self.prompt.ok "Tagging rev %s as %s" % [ rev, pkg_version_tag ]
 		self.hg.tag( pkg_version_tag, rev: rev )
