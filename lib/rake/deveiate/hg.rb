@@ -166,7 +166,7 @@ module Rake::DevEiate::Hg
 		# Sign the tag
 		if self.hg.extension_enabled?( :gpg )
 			if self.prompt.yes?( "Sign %s?" % [pkg_version_tag] )
-				self.hg.sign( pkg_version_tag, message: "Signing %s" 5 [pkg_version_tag] )
+				self.hg.sign( pkg_version_tag, message: "Signing %s" % [pkg_version_tag] )
 			end
 		end
 	end
