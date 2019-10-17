@@ -324,7 +324,6 @@ class Rake::DevEiate < Rake::TaskLib
 			self.output_documentation_debugging
 			self.output_project_files_debugging
 			self.output_dependency_debugging
-			self.output_release_debugging
 		end
 
 		task :debug => :base_debug
@@ -664,13 +663,10 @@ class Rake::DevEiate < Rake::TaskLib
 	end
 
 
-	### Output debugging regarding where releases will be posted.
-	def output_release_debugging
-		if self.allowed_push_host
-			self.prompt.say( "Only allowed to push releases to:", color: :bright_green )
-			self.prompt.say( "  #{self.allowed_push_host}" )
-			self.prompt.say( "\n" )
-		end
+	### Return a copy of the given text prefixed by +spaces+ number of spaces.
+	def indent( text, spaces=4 )
+		prefix = ' ' * spaces
+		return text.gsub( /(?<=\A|\n)/m, prefix )
 	end
 
 

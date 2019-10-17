@@ -79,7 +79,7 @@ module Rake::DevEiate::Gemspec
 		gemspec_src = gemspec.to_yaml
 
 		self.prompt.say( "Gemspec:", color: :bright_green )
-		self.prompt.say( indent(gemspec_src, 4) )
+		self.prompt.say( self.indent(gemspec_src, 4) )
 		self.prompt.say( "\n" )
 	end
 
@@ -161,17 +161,6 @@ module Rake::DevEiate::Gemspec
 		path = Pathname( self.signing_key ).expand_path
 		path = path.readlink if path.symlink?
 		return path
-	end
-
-
-	#######
-	private
-	#######
-
-	### Return a copy of the given text prefixed by +spaces+ number of spaces.
-	def indent( text, spaces=4 )
-		prefix = ' ' * spaces
-		return text.gsub( /(?<=\A|\n)/m, prefix )
 	end
 
 end # module Rake::DevEiate::Gemspec

@@ -27,7 +27,6 @@ module Rake::DevEiate::Docs
 			rdoc.rdoc_dir = Rake::DevEiate::DOCS_DIR.to_s
 		end
 
-
 		if self.publish_to
 			target = self.publish_to
 
@@ -38,6 +37,20 @@ module Rake::DevEiate::Docs
 			end
 		end
 
+		task :debug => :docs_debug
+		task( :docs_debug, &method(:do_docs_debug) )
+	end
+
+
+	### Task body for the :docs_debug task
+	def do_docs_debug( task, args )
+		self.prompt.say( "Docs are published to:", color: :bright_green )
+		if ( publish_url = self.publish_to )
+			self.prompt.say( self.indent(publish_url, 4) )
+		else
+			self.prompt.say( self.indent("n/a"), color: :bright_yellow )
+		end
+		self.prompt.say( "\n" )
 	end
 
 end # module Rake::DevEiate::Docs
