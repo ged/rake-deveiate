@@ -2,6 +2,13 @@
 
 ---
 
+## v0.4.1 [2019-10-17] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Make a gem from a new pkg/ directory every time.
+
+
 ## v0.4.0 [2019-10-16] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
