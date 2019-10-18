@@ -1,6 +1,7 @@
 # -*- ruby -*-
 # frozen_string_literal: true
 
+require 'rake/clean'
 require 'rubygems/package_task'
 
 require 'rake/deveiate' unless defined?( Rake::DevEiate )
@@ -32,10 +33,14 @@ module Rake::DevEiate::Packaging
 	def define_tasks
 		super if defined?( super )
 
+		task :gem => :clean
+		task :release_gem => :gem
+
 		spec = self.gemspec
 		Gem::PackageTask.new( spec ).define
 
-		task :release_gem => :gem
+		CLEAN.include( Rake::DevEiate::PKG_DIR.to_s )
+
 	end
 
 end # module Rake::DevEiate::Packaging
