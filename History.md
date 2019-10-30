@@ -2,6 +2,15 @@
 
 ---
 
+## v0.4.2 [2019-10-30] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Fix allowed gem push setting
+- Make README parsing a bit more forgiving, especially for RDoc
+- Handle commit message whitespace consistently
+
+
 ## v0.4.1 [2019-10-17] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
