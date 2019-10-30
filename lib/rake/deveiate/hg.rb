@@ -275,7 +275,12 @@ module Rake::DevEiate::Hg
 	### The body of the checkin task.
 	def do_hg_checkin( task, args )
 		targets = args.extras
-		self.prompt.say( self.pastel.cyan( "---\n", COMMIT_MSG_FILE.read, "---\n" ) )
+		commit_msg = COMMIT_MSG_FILE.read.strip
+
+		self.prompt.say( "---", color: :cyan )
+		self.prompt.say( commit_msg )
+		self.prompt.say( "---", color: :cyan )
+
 		if self.prompt.yes?( "Continue with checkin?" )
 			self.hg.commit( *targets, logfile: COMMIT_MSG_FILE.to_s )
 			rm_f COMMIT_MSG_FILE
