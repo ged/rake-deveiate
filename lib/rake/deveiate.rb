@@ -396,9 +396,10 @@ class Rake::DevEiate < Rake::TaskLib
 
 	### Extract authors in the form `Firstname Lastname <email@address>` from the README.
 	def extract_authors
-		return [] unless self.readme
+		readme = self.readme or return []
+		content = readme.parts.grep_v( RDoc::Markup::BlankLine )
 
-		heading, list = self.readme.parts.each_cons( 2 ).find do |heading, list|
+		heading, list = content.each_cons( 2 ).find do |heading, list|
 			heading.is_a?( RDoc::Markup::Heading ) && heading.text =~ /^authors?/i &&
 				list.is_a?( RDoc::Markup::List )
 		end
@@ -412,7 +413,11 @@ class Rake::DevEiate < Rake::TaskLib
 			# unparse the name + email
 			raw = item.parts.first.text or next
 			name, email = raw.split( ' mailto:', 2 )
-			"%s <%s>" % [ name, email ]
+			if email
+				"%s <%s>" % [ name, email ]
+			else
+				name
+			end
 		end
 	end
 
@@ -420,7 +425,7 @@ class Rake::DevEiate < Rake::TaskLib
 	### Extract the URI of the homepage from the `home` item of the first NOTE-type
 	### list in the README. Returns +nil+ if no such URI could be found.
 	def extract_homepage
-		return fail_extraction(:homepage, "no README") unless self.readme
+		return fail_extraction( :homepage, "no README" ) unless self.readme
 
 		list = self.readme.parts.find {|part| RDoc::Markup::List === part && part.type == :NOTE } or
 			return fail_extraction(:homepage, "No NOTE list")
@@ -621,6 +626,7 @@ class Rake::DevEiate < Rake::TaskLib
 	def output_documentation_debugging
 		summary = self.extract_summary
 		description = self.extract_description
+		homepage = self.extract_homepage
 
 		self.prompt.say( "Documentation", color: :bright_green )
 		self.prompt.say( "Authors:" )
@@ -632,6 +638,8 @@ class Rake::DevEiate < Rake::TaskLib
 		self.prompt.say( summary, color: :bold )
 		self.prompt.say( "Description:" )
 		self.prompt.say( description, color: :bold )
+		self.prompt.say( "Homepage:" )
+		self.prompt.say( homepage, color: :bold )
 		self.prompt.say( "\n" )
 	end
 
