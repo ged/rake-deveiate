@@ -2,6 +2,13 @@
 
 ---
 
+## v0.5.0 [2019-11-13] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Add a 'setup' task
+
+
 ## v0.4.2 [2019-10-30] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
