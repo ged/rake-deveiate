@@ -315,6 +315,12 @@ class Rake::DevEiate < Rake::TaskLib
 		task :test
 		task :spec
 		task :integration
+
+		desc "Set up the project for development"
+		task :setup do
+			self.install_dependencies
+		end
+
 	end
 
 
@@ -583,6 +589,12 @@ class Rake::DevEiate < Rake::TaskLib
 		finder = Rake::DevEiate::GemDepFinder.new( GEMDEPS_FILE )
 		finder.load
 		return finder.dependencies
+	end
+
+
+	### Install the gems listed in the gem dependencies file.
+	def install_dependencies
+		ruby '-S', 'gem', 'i', '-Ng'
 	end
 
 
