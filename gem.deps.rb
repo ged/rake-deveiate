@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-gem 'rake', '~> 12.3'
+gem 'rake', '~> 13.0'
 gem 'rdoc', '~> 6.2'
 gem 'rspec', '~> 3.8'
 gem 'hglib', '~> 0.6'
