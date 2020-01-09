@@ -1,6 +1,13 @@
 # Release History for rake-deveiate
 
 ---
+## v0.7.0 [2020-01-09] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Add support for required_ruby_version.
+
+
 ## v0.6.0 [2019-12-24] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
