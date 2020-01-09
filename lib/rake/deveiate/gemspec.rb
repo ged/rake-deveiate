@@ -112,6 +112,8 @@ module Rake::DevEiate::Gemspec
 		spec.licenses     = self.licenses
 		spec.date         = Date.today
 
+		spec.required_ruby_version = self.required_ruby_version if
+			self.required_ruby_version
 		spec.metadata['allowed_push_host'] = self.allowed_push_host if self.allowed_push_host
 
 		self.authors.each do |author|

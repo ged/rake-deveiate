@@ -148,6 +148,7 @@ class Rake::DevEiate < Rake::TaskLib
 		@dependencies  = self.find_dependencies
 
 		@publish_to    = nil
+		@required_ruby_version = nil
 
 		super()
 
@@ -244,6 +245,10 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The rsync-compatible target to publish documentation to.
 	attr_accessor :publish_to
+
+	##
+	# The version of Ruby required by this gem, in Gem version format.
+	attr_accessor :required_ruby_version
 
 
 	#
