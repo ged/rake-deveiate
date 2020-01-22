@@ -33,7 +33,6 @@ module Rake::DevEiate::Packaging
 	def define_tasks
 		super if defined?( super )
 
-		task :gem => :clean
 		task :release_gem => :gem
 
 		spec = self.gemspec
