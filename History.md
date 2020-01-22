@@ -1,6 +1,18 @@
 # Release History for rake-deveiate
 
 ---
+
+## v0.8.0 [2020-01-22] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Fix a `clean` task that was breaking release builds
+
+Improvements:
+
+- Add `post_install_message` gemspec accessor
+
+
 ## v0.7.0 [2020-01-09] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
