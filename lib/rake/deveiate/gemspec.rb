@@ -26,15 +26,22 @@ module Rake::DevEiate::Gemspec
 		super if defined?( super )
 
 		@signing_key = options[:signing_key] || Gem.default_key_path
+		@post_install_message = options[:post_install_message]
 
 		@gemspec = nil
 	end
+
+
+	##
+	# A message to be displayed after the gem is installed.
+	attr_accessor :post_install_message
 
 
 	### Reset any cached data when project attributes change.
 	def reset
 		super if defined?( super )
 		@gemspec = nil
+		@post_install_message = nil
 	end
 
 
@@ -78,6 +85,12 @@ module Rake::DevEiate::Gemspec
 		gemspec = self.gemspec
 		gemspec_src = gemspec.to_yaml
 
+		if self.post_install_message
+			self.prompt.say( "Post-install message:", color: :bright_green )
+			self.prompt.say( self.indent(self.post_install_message, 4) )
+			self.prompt.say( "\n" )
+		end
+
 		self.prompt.say( "Gemspec:", color: :bright_green )
 		self.prompt.say( self.indent(gemspec_src, 4) )
 		self.prompt.say( "\n" )
@@ -115,6 +128,7 @@ module Rake::DevEiate::Gemspec
 		spec.required_ruby_version = self.required_ruby_version if
 			self.required_ruby_version
 		spec.metadata['allowed_push_host'] = self.allowed_push_host if self.allowed_push_host
+		spec.post_install_message = self.post_install_message
 
 		self.authors.each do |author|
 			if ( m = author.match(AUTHOR_PATTERN) )
