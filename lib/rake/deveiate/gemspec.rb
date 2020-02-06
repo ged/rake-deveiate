@@ -124,7 +124,7 @@ module Rake::DevEiate::Gemspec
 		spec.summary      = self.summary || self.extract_summary
 		spec.files        = self.project_files
 		spec.signing_key  = self.resolve_signing_key.to_s
-		spec.cert_chain   = self.find_signing_cert
+		spec.cert_chain   = [ self.find_signing_cert ].compact
 		spec.version      = self.version
 		spec.licenses     = self.licenses
 		spec.date         = Date.today
@@ -188,7 +188,9 @@ module Rake::DevEiate::Gemspec
 	### Returns nil if no such cert exists.
 	def find_signing_cert
 		current_user = ENV[ RELEASE_USER_ENV ] || Etc.getlogin
-		return self.cert_files.find {|fn| fn.end_with?("#{current_user}.pem") }
+		certfile = self.cert_files.find {|fn| fn.end_with?("#{current_user}.pem") } or
+			return nil
+		return File.expand_path( certfile )
 	end
 
 end # module Rake::DevEiate::Gemspec
