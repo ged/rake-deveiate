@@ -34,7 +34,7 @@ class Rake::DevEiate < Rake::TaskLib
 	VERSION_PATTERN = /VERSION\s*=\s*(?<quote>['"])(?<version>\d+(\.\d+){2}.*)\k<quote>/
 
 	# The version of this library
-	VERSION = '0.8.0'
+	VERSION = '0.9.0'
 
 	# The server to release to by default
 	DEFAULT_GEMSERVER = 'https://rubygems.org/'

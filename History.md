@@ -2,6 +2,13 @@
 
 ---
 
+## v0.9.0 [2020-02-05] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Fix gem signing for projects with more than one cert.
+
+
 ## v0.8.0 [2020-01-22] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
