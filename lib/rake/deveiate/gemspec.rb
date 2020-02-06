@@ -15,6 +15,10 @@ module Rake::DevEiate::Gemspec
 	# Pattern for splitting parsed authors list items into name and email
 	AUTHOR_PATTERN = /^(?<name>.*)\s<(?<email>.*)>$/
 
+	# Environment variable for overriding the name of the user packaging up a
+	# release.
+	RELEASE_USER_ENV = 'RELEASE_USER'
+
 
 	##
 	# The path to the file used to sign released gems
@@ -120,7 +124,7 @@ module Rake::DevEiate::Gemspec
 		spec.summary      = self.summary || self.extract_summary
 		spec.files        = self.project_files
 		spec.signing_key  = self.resolve_signing_key.to_s
-		spec.cert_chain   = self.cert_files.map( &File.method(:expand_path) ).to_a
+		spec.cert_chain   = self.find_signing_cert
 		spec.version      = self.version
 		spec.licenses     = self.licenses
 		spec.date         = Date.today
@@ -177,6 +181,14 @@ module Rake::DevEiate::Gemspec
 		path = Pathname( self.signing_key ).expand_path
 		path = path.readlink if path.symlink?
 		return path
+	end
+
+
+	### Return the path to the cert belonging to the user packaging up the release.
+	### Returns nil if no such cert exists.
+	def find_signing_cert
+		current_user = ENV[ RELEASE_USER_ENV ] || Etc.getlogin
+		return self.cert_files.find {|fn| fn.end_with?("#{current_user}.pem") }
 	end
 
 end # module Rake::DevEiate::Gemspec
