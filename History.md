@@ -2,6 +2,13 @@
 
 ---
 
+## v0.10.0 [2020-02-12] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Find/include executables in the gemspec.
+
+
 ## v0.9.0 [2020-02-05] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
