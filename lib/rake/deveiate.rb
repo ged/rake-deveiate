@@ -130,6 +130,7 @@ class Rake::DevEiate < Rake::TaskLib
 
 		@manifest_file = DEFAULT_MANIFEST_FILE.dup
 		@project_files = self.read_manifest
+		@executables   = self.find_executables
 		@version       = self.find_version || DEFAULT_VERSION
 		@readme_file   = self.find_readme
 		@history_file  = self.find_history_file
@@ -212,6 +213,10 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The files which should be distributed with the project as a Rake::FileList
 	attr_accessor :project_files
+
+	##
+	# The Array of project files that are in the bin/ directory and are executable.
+	attr_reader :executables
 
 	##
 	# The files which should be used to generate documentation as a Rake::FileList
@@ -444,6 +449,15 @@ class Rake::DevEiate < Rake::TaskLib
 			return fail_extraction(:homepage, "No `home` item")
 
 		return item.parts.first.text
+	end
+
+
+	### Return an Array of the paths for the executables contained in the project files.
+	def find_executables
+		paths = self.project_files.find_all do |path|
+			path.start_with?( 'bin/' )
+		end
+		return paths.map {|path| path[%r{^bin/(.*)}, 1] }
 	end
 
 
