@@ -2,6 +2,18 @@
 
 ---
 
+## v0.11.0 [2020-02-26] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Add metadata extraction.
+- Try to strip markup from the gemspec description and summary
+
+Bugfixes:
+
+- Fix a bug in history file task when there's already an entry for the current version.
+
+
 ## v0.10.0 [2020-02-12] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
