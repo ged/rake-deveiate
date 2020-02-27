@@ -88,6 +88,10 @@ class Rake::DevEiate < Rake::TaskLib
 		.md
 		.rdoc
 		.txt
+		.png
+		.jpg
+		.gif
+		.svg
 	]
 
 	# The path to the data directory for the Prestigio library.
@@ -316,7 +320,7 @@ class Rake::DevEiate < Rake::TaskLib
 		task :update_history
 
 		desc "Package up and push a release"
-		task :release => [ :prerelease, :release_gem, :postrelease ]
+		task :release => [ :prerelease, :gem, :release_gem, :postrelease ]
 		task :prerelease
 		task :release_gem
 		task :postrelease
@@ -398,7 +402,11 @@ class Rake::DevEiate < Rake::TaskLib
 	### Extract a description from the README if possible. Returns +nil+ if not.
 	def extract_description
 		parts = self.readme&.parts or return nil
-		return parts.find {|part| part.is_a?(RDoc::Markup::Paragraph) }&.text
+		desc_para = parts.find {|part| part.is_a?(RDoc::Markup::Paragraph) }&.text or return nil
+		formatter = RDoc::Markup::ToHtmlSnippet.new( RDoc::Options.new )
+		html = formatter.convert( desc_para )
+
+		return html.gsub( /<.*?>/, '' ).strip
 	end
 
 

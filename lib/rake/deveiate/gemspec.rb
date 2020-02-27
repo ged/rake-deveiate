@@ -130,6 +130,8 @@ module Rake::DevEiate::Gemspec
 		spec.licenses     = self.licenses
 		spec.date         = Date.today
 
+		spec.metadata     = self.make_gem_metadata
+
 		spec.required_ruby_version = self.required_ruby_version if
 			self.required_ruby_version
 		spec.metadata['allowed_push_host'] = self.allowed_push_host if self.allowed_push_host
@@ -168,6 +170,73 @@ module Rake::DevEiate::Gemspec
 		spec.cert_chain  = []
 
 		return spec
+	end
+
+
+	### Build the hash of metadata that should be attached to the gem.
+	def make_gem_metadata
+	    # "bug_tracker_uri"   => "https://example.com/user/bestgemever/issues",
+	    # "changelog_uri"     => "https://example.com/user/bestgemever/CHANGELOG.md",
+	    # "documentation_uri" => "https://www.example.info/gems/bestgemever/0.0.1",
+	    # "homepage_uri"      => "https://bestgemever.example.io",
+	    # "mailing_list_uri"  => "https://groups.example.com/bestgemever",
+	    # "source_code_uri"   => "https://example.com/user/bestgemever",
+	    # "wiki_uri"          => "https://example.com/user/bestgemever/wiki"
+
+		metadata = {
+			"homepage_uri" => self.homepage
+		}
+
+		if docs_uri = self.extract_documentation_uri
+			metadata['documentation_uri'] = docs_uri.to_s
+			if docs_uri.path.end_with?( '/', self.name )
+				cl_uri = docs_uri.dup
+				cl_uri.path = File.join( cl_uri.path, 'History_md.html' )
+				metadata['changelog_uri'] = cl_uri.to_s
+			end
+		end
+
+		if source_uri = self.extract_source_uri
+			metadata['source_uri'] = source_uri.to_s
+			case source_uri.host
+			when /\.sr\.ht/
+				bt_uri = source_uri.dup
+				bt_uri.host = 'todo.sr.ht'
+				metadata['bug_tracker_uri'] = bt_uri.to_s
+			else
+				self.trace "No idea what bug tracker URIs for %s look like!" % [ source_uri.host ]
+			end
+		end
+
+		return metadata
+	end
+
+
+	### Extract the documentation URI from the `docs` item of the first NOTE-type
+	### list in the README. Returns +nil+ if no such URI could be found.
+	def extract_documentation_uri
+		return fail_extraction( :documentation, "no README" ) unless self.readme
+
+		list = self.readme.parts.find {|part| RDoc::Markup::List === part && part.type == :NOTE } or
+			return fail_extraction(:documentation, "No NOTE list")
+		item = list.items.find {|item| item.label.include?('docs') } or
+			return fail_extraction(:documentation, "No `docs` item")
+
+		return URI( item.parts.first.text )
+	end
+
+
+	### Extract the source URI from the `docs` item of the first NOTE-type
+	### list in the README. Returns +nil+ if no such URI could be found.
+	def extract_source_uri
+		return fail_extraction( :source, "no README" ) unless self.readme
+
+		list = self.readme.parts.find {|part| RDoc::Markup::List === part && part.type == :NOTE } or
+			return fail_extraction(:code, "No NOTE list")
+		item = list.items.find {|item| item.label.include?('code') } or
+			return fail_extraction(:code, "No `code` item")
+
+		return URI( item.parts.first.text )
 	end
 
 

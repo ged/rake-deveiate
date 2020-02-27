@@ -348,7 +348,7 @@ module Rake::DevEiate::Hg
 		self.prompt.say "Updating history for %s..." % [ version_tag ]
 
 		if self.get_history_file_versions.include?( version_tag )
-			self.log.ok "History file already includes a section for %s" % [ version_tag ]
+			self.trace "History file already includes a section for %s" % [ version_tag ]
 			abort
 		end
 

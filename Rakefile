@@ -9,6 +9,8 @@ require 'rspec/core/rake_task'
 $LOAD_PATH.unshift( 'lib', '../hglib/lib' )
 require 'rake/deveiate'
 
-Rake::DevEiate.setup( 'rake-deveiate' )
+Rake::DevEiate.setup( 'rake-deveiate' ) do |project|
+	project.publish_to = 'deveiate:/usr/local/www/public/code'
+end
 
 
