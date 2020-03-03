@@ -3,6 +3,7 @@
 
 require 'pathname'
 require 'etc'
+require 'tempfile'
 
 begin
   gem 'rdoc'
@@ -126,12 +127,18 @@ class Rake::DevEiate < Rake::TaskLib
 	end
 
 
+	### Returns +true+ if Rake::DevEiate has already been set up.
+	def self::already_setup?
+		Rake::Task.task_defined?( 'deveiate' )
+	end
+
 
 	### Create the devEiate tasks for a gem with the given +name+.
 	def initialize( name, **options, &block )
 		@name          = validate_gemname( name )
 		@options       = options
 
+		@rakefile      = PROJECT_DIR + 'Rakefile'
 		@manifest_file = DEFAULT_MANIFEST_FILE.dup
 		@project_files = self.read_manifest
 		@executables   = self.find_executables
@@ -201,6 +208,10 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The title of the library for things like docs, gemspec, etc.
 	attr_accessor :title
+
+	##
+	# The project's Rakefile
+	attr_pathname :rakefile
 
 	##
 	# The file that will be the main page of documentation
@@ -304,6 +315,13 @@ class Rake::DevEiate < Rake::TaskLib
 
 	### Set up a simple default task
 	def define_default_tasks
+
+		# task used to indicate that rake-deveiate has already been setup once; for
+		# global rakefiles.
+		task :deveiate do
+			# no-op
+		end
+
 		desc "The task that runs by default"
 		task( :default => :spec )
 
@@ -631,9 +649,13 @@ class Rake::DevEiate < Rake::TaskLib
 		case File.extname( filename )
 		when '.md' then return '#'
 		when '.rdoc' then return '='
-		else
-			raise "Don't know what header character is appropriate for %s" % [ filename ]
+		when ''
+			if filename == 'Rakefile'
+				return '#'
+			end
 		end
+
+		raise "Don't know what header character is appropriate for %s" % [ filename ]
 	end
 
 
@@ -658,6 +680,26 @@ class Rake::DevEiate < Rake::TaskLib
 			header_char: header_char,
 			project: self
 		)
+	end
+
+
+	### Yield an IO to the block open to a file that will replace +filename+ if the
+	### block returns successfully.
+	def write_replacement_file( filename, **opts )
+		path = Pathname( filename ).expand_path
+		mode = path.stat.mode
+		owner = path.stat.uid
+		group = path.stat.gid
+
+		tmpfile = Tempfile.create( path.basename.to_s, **opts ) do |fh|
+			yield( fh )
+
+			newfile = Pathname( fh.path ).expand_path
+			newfile.rename( path )
+
+			path.chown( owner, group )
+			path.chmod( mode )
+		end
 	end
 
 

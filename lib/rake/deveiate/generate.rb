@@ -12,6 +12,7 @@ module Rake::DevEiate::Generate
 
 
 	# Template files
+	RAKEFILE_TEMPLATE = 'Rakefile.erb'
 	README_TEMPLATE = 'README.erb'
 	HISTORY_TEMPLATE = 'History.erb'
 
@@ -27,12 +28,14 @@ module Rake::DevEiate::Generate
 	def define_tasks
 		super if defined?( super )
 
+		file( self.rakefile.to_s )
 		file( self.readme_file.to_s )
 		file( self.history_file.to_s )
 		file( self.manifest_file.to_s )
 		file( RUBY_VERSION_FILE.to_s )
 		file( GEMSET_FILE.to_s )
 
+		task( self.rakefile, &method(:do_generate_rakefile) )
 		task( self.readme_file, &method(:do_generate_readme_file) )
 		task( self.history_file, &method(:do_generate_history_file) )
 		task( self.manifest_file, &method(:do_generate_manifest_file) )
@@ -41,6 +44,7 @@ module Rake::DevEiate::Generate
 
 		desc "Generate any missing project files."
 		task :generate => [
+			self.rakefile,
 			self.readme_file,
 			self.history_file,
 			self.manifest_file,
@@ -48,10 +52,25 @@ module Rake::DevEiate::Generate
 			GEMSET_FILE,
 		]
 
+		# Abstract named tasks; mostly for invoking programmatically
+		namespace :generate do
+			task :rakefile => self.rakefile
+			task :readme => self.readme_file
+			task :history_file => self.history_file
+			task :manifest => self.manifest_file
+			task :ruby_version_file => RUBY_VERSION_FILE
+			task :gemset_file => GEMSET_FILE
+		end
+
 		desc "Diff the manifest file against the default set of project files."
 		task( :diff_manifest, &method(:do_diff_manifest) )
 	end
 
+
+	### Generate a Rakefile if one doesn't already exist. Error if one does.
+	def do_generate_rakefile( task, args )
+		self.generate_from_template( task.name, RAKEFILE_TEMPLATE )
+	end
 
 
 	### Generate a README file if one doesn't already exist. Error if one does.
@@ -110,11 +129,11 @@ module Rake::DevEiate::Generate
 	def generate_from_template( filename, template_path )
 		self.prompt.ok "Generating #{filename}..."
 		File.open( filename, FILE_CREATION_FLAGS, 0644, encoding: 'utf-8' ) do |io|
-			result = self.load_and_render_template( template_path )
+			result = self.load_and_render_template( template_path, filename )
 			io.print( result )
 		end
 	end
 
-end # module Rake::DevEiate::Hg
+end # module Rake::DevEiate::Generate
 
 

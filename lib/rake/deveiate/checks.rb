@@ -195,6 +195,6 @@ module Rake::DevEiate::Checks
 	end
 
 
-end # module Rake::DevEiate::Docs
+end # module Rake::DevEiate::Checks
 
 
