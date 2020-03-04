@@ -421,7 +421,7 @@ class Rake::DevEiate < Rake::TaskLib
 	def extract_description
 		parts = self.readme&.parts or return nil
 		desc_para = parts.find {|part| part.is_a?(RDoc::Markup::Paragraph) }&.text or return nil
-		formatter = RDoc::Markup::ToHtmlSnippet.new( RDoc::Options.new )
+		formatter = RDoc::Markup::ToHtml.new( RDoc::Options.new )
 		html = formatter.convert( desc_para )
 
 		return html.gsub( /<.*?>/, '' ).strip
