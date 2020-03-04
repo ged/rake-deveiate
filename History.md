@@ -2,6 +2,13 @@
 
 ---
 
+## v0.12.1 [2020-03-04] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Stop truncating the description extracted from the README.
+
+
 ## v0.12.0 [2020-03-04] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
