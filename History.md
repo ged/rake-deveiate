@@ -2,6 +2,13 @@
 
 ---
 
+## v0.12.0 [2020-03-04] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Add fixup tasks, example global rakefile
+
+
 ## v0.11.0 [2020-02-26] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
