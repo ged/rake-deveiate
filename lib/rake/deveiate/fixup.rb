@@ -93,7 +93,7 @@ module Rake::DevEiate::Fixup
 		fixups << "De-hoeify the Rakefile" if self.rakefile_needs_hoe_fixup?
 		fixups << "Remove cruft from the manifest" if self.manifest_needs_fixup?
 		fixups << "Remove bundler files" if self.bundler_files_present?
-		fixups << "Convery legacy dependency files" if self.legacy_deps_files_present?
+		fixups << "Convert legacy dependency files" if self.legacy_deps_files_present?
 
 		self.prompt.say( "Fixups available:", color: :bright_green )
 

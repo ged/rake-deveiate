@@ -73,6 +73,10 @@ class Rake::DevEiate < Rake::TaskLib
 	]
 	DEFAULT_PROJECT_FILES.exclude( 'Manifest*.txt' )
 
+	# Environment variable overrides for settings
+	ENV_SETTING_NAME = {
+		version_from: 'VERSION_FROM',
+	}
 
 
 	# The default license for the project in SPDX form: https://spdx.org/licenses
@@ -142,13 +146,14 @@ class Rake::DevEiate < Rake::TaskLib
 		@manifest_file = DEFAULT_MANIFEST_FILE.dup
 		@project_files = self.read_manifest
 		@executables   = self.find_executables
-		@version       = self.find_version || DEFAULT_VERSION
 		@readme_file   = self.find_readme
 		@history_file  = self.find_history_file
 		@readme        = self.parse_readme
 		@rdoc_files    = self.make_rdoc_filelist
 		@cert_files    = Rake::FileList[ CERTS_DIR + '*.pem' ]
 		@licenses      = [ DEFAULT_LICENSE ]
+		@version_from  = env( :version_from, as_pathname: true ) ||
+			LIB_DIR + "%s.rb" % [ name.gsub(/-/, '/') ]
 
 		@docs_dir      = DOCS_DIR.dup
 
@@ -159,6 +164,7 @@ class Rake::DevEiate < Rake::TaskLib
 		@summary       = nil
 		@dependencies  = self.find_dependencies
 
+		@version       = nil
 		@publish_to    = nil
 		@required_ruby_version = nil
 
@@ -208,6 +214,10 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The title of the library for things like docs, gemspec, etc.
 	attr_accessor :title
+
+	##
+	# The pathname of the file to read the version from
+	attr_pathname :version_from
 
 	##
 	# The project's Rakefile
@@ -487,10 +497,17 @@ class Rake::DevEiate < Rake::TaskLib
 	end
 
 
+	### Return the project version as a Gem::Version, reading it from the
+	### #version_from file if it's not set yet.
+	def version
+		return @version ||= self.find_version
+	end
+
+
 	### Find the file that contains the VERSION constant and return it as a
 	### Gem::Version.
 	def find_version
-		version_file = LIB_DIR + "%s.rb" % [ self.name.gsub(/-/, '/') ]
+		version_file = self.version_from
 
 		unless version_file.readable?
 			self.prompt.warn "Version could not be read from %s" % [ version_file ]
@@ -776,6 +793,17 @@ class Rake::DevEiate < Rake::TaskLib
 	def fail_extraction( item, reason )
 		self.prompt.warn "Extraction of %s failed: %s" % [ item, reason ]
 		return nil
+	end
+
+
+	### Convenience mapping -- fetch a value for the setting of the given +name+
+	### from the appropriate environment variable. Returns +nil+ if that variable is
+	### undefined or blank.
+	def env( name, as_pathname: false )
+		env_name = ENV_SETTING_NAME[ name ] or return nil
+		val = ENV[ env_name ] or return nil
+		return val unless as_pathname
+		return PROJECT_DIR + val
 	end
 
 end # class Rake::DevEiate
