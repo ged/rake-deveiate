@@ -2,6 +2,17 @@
 
 ---
 
+## v0.13.0 [2020-03-09] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Allow file that version is read from to be overridden
+
+Bugfixes:
+
+- Bump the hglib dependency
+
+
 ## v0.12.1 [2020-03-04] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
