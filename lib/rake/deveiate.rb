@@ -46,6 +46,10 @@ class Rake::DevEiate < Rake::TaskLib
 	# The version to use if one cannot be read from the source
 	DEFAULT_VERSION = '0.1.0'
 
+	# Words in the package/gem name that should not be included in deriving paths,
+	# file names, etc.
+	PACKAGE_IGNORE_WORDS = %w[ruby]
+
 	# Paths
 	PROJECT_DIR  = Pathname( '.' )
 
@@ -153,7 +157,7 @@ class Rake::DevEiate < Rake::TaskLib
 		@cert_files    = Rake::FileList[ CERTS_DIR + '*.pem' ]
 		@licenses      = [ DEFAULT_LICENSE ]
 		@version_from  = env( :version_from, as_pathname: true ) ||
-			LIB_DIR + "%s.rb" % [ name.gsub(/-/, '/') ]
+			LIB_DIR + "%s.rb" % [ version_file_from(name) ]
 
 		@docs_dir      = DOCS_DIR.dup
 
@@ -804,6 +808,15 @@ class Rake::DevEiate < Rake::TaskLib
 		val = ENV[ env_name ] or return nil
 		return val unless as_pathname
 		return PROJECT_DIR + val
+	end
+
+
+	### Return the path to the file that should contain the VERSION constant.
+	def version_file_from( name )
+		return name.
+			split( /-/ ).
+			reject {|word| PACKAGE_IGNORE_WORDS.include?(word) }.
+			join( '/' )
 	end
 
 end # class Rake::DevEiate

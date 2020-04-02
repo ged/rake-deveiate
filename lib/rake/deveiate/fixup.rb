@@ -209,8 +209,12 @@ module Rake::DevEiate::Fixup
 
 				raise "Failed to read dependencies from %s!" % [ depsfile ] if depnames.empty?
 
-				self.trace "Recording move of %s to %s" % [ depsfile, new_depsfile ]
-				self.hg.mv( depsfile, new_depsfile )
+				if self.hg.tracked?( depsfile )
+					self.trace "Recording move of %s to %s" % [ depsfile, new_depsfile ]
+					self.hg.mv( depsfile, new_depsfile )
+				else
+					depsfile.rename( new_depsfile )
+				end
 
 				newest_deps = self.find_latest_versions( *depnames ).
 					reject {|tuple| tuple.name.include?('hoe') }
