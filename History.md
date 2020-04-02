@@ -2,6 +2,13 @@
 
 ---
 
+## v0.14.0 [2020-04-02] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Handle gem names like 'ruby-pf', fixup untracked gem deps files
+
+
 ## v0.13.0 [2020-03-09] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
