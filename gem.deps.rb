@@ -8,7 +8,7 @@ gem 'rspec', '~> 3.8'
 gem 'simplecov', '~> 0.18'
 gem 'hglib', '~> 0.10', '>= 0.10.1'
 gem 'tty-prompt', '~> 0.19'
-gem 'tty-editor', '~> 0.5'
+gem 'tty-editor', '~> 0.6'
 gem 'tty-table', '~> 0.11'
 gem 'pastel', '~> 0.7'
 
