@@ -3,6 +3,9 @@
 home
 : https://hg.sr.ht/~ged/rake-deveiate
 
+code
+: https://hg.sr.ht/~ged/rake-deveiate/browse
+
 github
 : https://github.com/ged/rake-deveiate
 

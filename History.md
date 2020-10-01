@@ -1,6 +1,12 @@
 # Release History for rake-deveiate
 
 ---
+## v0.14.1 [2020-10-01] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Support changes in latest tty-editor.
+
 
 ## v0.14.0 [2020-04-02] Michael Granger <ged@FaerieMUD.org>
 
