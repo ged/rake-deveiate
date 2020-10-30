@@ -124,6 +124,7 @@ module Rake::DevEiate::Gemspec
 		spec.summary      = self.summary || self.extract_summary
 		spec.files        = self.project_files
 		spec.executables  = self.executables
+		spec.extensions   = self.extensions.to_a
 		spec.signing_key  = self.resolve_signing_key.to_s
 		spec.cert_chain   = [ self.find_signing_cert ].compact
 		spec.version      = self.version

@@ -167,6 +167,7 @@ class Rake::DevEiate < Rake::TaskLib
 		@description   = self.extract_description || DEFAULT_DESCRIPTION
 		@summary       = nil
 		@dependencies  = self.find_dependencies
+		@extensions    = Rake::FileList.new
 
 		@version       = nil
 		@publish_to    = nil
@@ -271,6 +272,10 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The Gem::RequestSet that describes the gem's dependencies
 	attr_accessor :dependencies
+
+	##
+	# A FileMap of the paths to this project's extension config scripts.
+	attr_reader :extensions
 
 	##
 	# The gemserver to push gems to
