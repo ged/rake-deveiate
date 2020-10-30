@@ -1,6 +1,13 @@
 # Release History for rake-deveiate
 
 ---
+## v0.15.1 [2020-10-29] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Add the extension tasks file to the gem.
+
+
 ## v0.15.0 [2020-10-29] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
