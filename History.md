@@ -1,6 +1,13 @@
 # Release History for rake-deveiate
 
 ---
+## v0.15.0 [2020-10-29] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Added support for extensions
+
+
 ## v0.14.1 [2020-10-01] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
