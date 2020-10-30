@@ -204,6 +204,10 @@ module Rake::DevEiate::Gemspec
 				bt_uri = source_uri.dup
 				bt_uri.host = 'todo.sr.ht'
 				metadata['bug_tracker_uri'] = bt_uri.to_s
+			when /\.gitlab\.com/
+				bt_uri = source_uri.dup
+				bt_uri.path += '-/issues'
+				metadata['bug_tracker_uri'] = bt_uri.to_s
 			else
 				self.trace "No idea what bug tracker URIs for %s look like!" % [ source_uri.host ]
 			end

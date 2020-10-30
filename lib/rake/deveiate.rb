@@ -665,6 +665,7 @@ class Rake::DevEiate < Rake::TaskLib
 
 	### Install the gems listed in the gem dependencies file.
 	def install_dependencies
+		self.prompt.say "Installing dependencies"
 		ruby '-S', 'gem', 'i', '-Ng'
 	end
 
@@ -744,9 +745,9 @@ class Rake::DevEiate < Rake::TaskLib
 		self.prompt.say( "Summary: " )
 		self.prompt.say( summary, color: :bold )
 		self.prompt.say( "Description:" )
-		self.prompt.say( description, color: :bold )
+		self.prompt.say( "   " + description, color: :bold )
 		self.prompt.say( "Homepage:" )
-		self.prompt.say( homepage, color: :bold )
+		self.prompt.say( "   " + homepage, color: :bold )
 		self.prompt.say( "\n" )
 	end
 

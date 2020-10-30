@@ -9,7 +9,7 @@ require 'tty/editor'
 require 'rake/deveiate' unless defined?( Rake::DevEiate )
 
 
-# Version-control tasks
+# Mercurial version-control tasks
 module Rake::DevEiate::Hg
 
 	# The name of the file to edit for the commit message
@@ -53,7 +53,7 @@ module Rake::DevEiate::Hg
 	def define_tasks
 		super if defined?( super )
 
-		return unless File.directory?( '.hg' )
+		return unless self.is_hg_working_copy?
 
 		file COMMIT_MSG_FILE.to_s do |task|
 			commit_log = Pathname( task.name )
@@ -134,6 +134,12 @@ module Rake::DevEiate::Hg
 	rescue ::Exception => err
 		$stderr.puts "%s while defining Mercurial tasks: %s" % [ err.class.name, err.message ]
 		raise
+	end
+
+
+	### Returns +true+ if the current directory looks like a Mercurial working copy.
+	def is_hg_working_copy?
+		return File.directory?( '.hg' )
 	end
 
 
@@ -408,27 +414,31 @@ module Rake::DevEiate::Hg
 	def do_hg_debug( task, args )
 		self.prompt.say( "Hg Info", color: :bright_green )
 
-		self.prompt.say( "Mercurial version: " )
-		self.prompt.say( Hglib.version, color: :bold )
-		self.prompt.say( "Release tag prefix: " )
-		self.prompt.say( self.release_tag_prefix, color: :bold )
+		if self.is_hg_working_copy?
+			self.prompt.say( "Mercurial version: " )
+			self.prompt.say( Hglib.version, color: :bold )
+			self.prompt.say( "Release tag prefix: " )
+			self.prompt.say( self.release_tag_prefix, color: :bold )
 
-		self.prompt.say( "Version tags:" )
-		self.get_version_tag_names.each do |tag|
-			self.prompt.say( '- ' )
-			self.prompt.say( tag, color: :bold )
-		end
+			self.prompt.say( "Version tags:" )
+			self.get_version_tag_names.each do |tag|
+				self.prompt.say( '- ' )
+				self.prompt.say( tag, color: :bold )
+			end
 
-		self.prompt.say( "History file versions:" )
-		self.get_history_file_versions.each do |tag|
-			self.prompt.say( '- ' )
-			self.prompt.say( tag, color: :bold )
-		end
+			self.prompt.say( "History file versions:" )
+			self.get_history_file_versions.each do |tag|
+				self.prompt.say( '- ' )
+				self.prompt.say( tag, color: :bold )
+			end
 
-		self.prompt.say( "Unhistoried version tags:" )
-		self.get_unhistoried_version_tags.each do |tag|
-			self.prompt.say( '- ' )
-			self.prompt.say( tag, color: :bold )
+			self.prompt.say( "Unhistoried version tags:" )
+			self.get_unhistoried_version_tags.each do |tag|
+				self.prompt.say( '- ' )
+				self.prompt.say( tag, color: :bold )
+			end
+		else
+			self.prompt.say( "Doesn't appear to be a Mercurial repository." )
 		end
 
 		self.prompt.say( "\n" )
