@@ -54,11 +54,23 @@ module Rake::DevEiate::Generate
 
 		# Abstract named tasks; mostly for invoking programmatically
 		namespace :generate do
+
+			desc "Generate a Rakefile"
 			task :rakefile => self.rakefile
+
+			desc "Generate a %s file" % [ self.readme_file ]
 			task :readme => self.readme_file
+
+			desc "Generate a %s file" % [ self.history_file ]
 			task :history_file => self.history_file
+
+			desc "Generate a %s file" % [ self.manifest_file ]
 			task :manifest => self.manifest_file
+
+			desc "Generate a %s file" % [ RUBY_VERSION_FILE ]
 			task :ruby_version_file => RUBY_VERSION_FILE
+
+			desc "Generate a %s file" % [ GEMSET_FILE ]
 			task :gemset_file => GEMSET_FILE
 		end
 
