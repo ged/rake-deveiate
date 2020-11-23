@@ -1,6 +1,14 @@
 # Release History for rake-deveiate
 
 ---
+
+## v0.16.0 [2020-11-23] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Add support for projects managed with Git.
+
+
 ## v0.15.1 [2020-10-29] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
