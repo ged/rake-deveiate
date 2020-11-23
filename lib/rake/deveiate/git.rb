@@ -333,7 +333,7 @@ module Rake::DevEiate::Git
 	### Check the status of the repo and ensure there are outstanding changes. If there
 	### are no changes, abort.
 	def do_git_check_for_changes( task, args )
-		# :FIXME: Figure out a better way to do this. 
+		# :FIXME: Figure out a better way to do this.
 		unless self.git.status.any?( &:type )
 			self.prompt.error "Working copy is clean."
 			abort

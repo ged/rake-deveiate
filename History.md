@@ -1,6 +1,12 @@
 # Release History for rake-deveiate
 
 ---
+## v0.16.1 [2020-11-23] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Include missing `git` tasklib.
+
 
 ## v0.16.0 [2020-11-23] Michael Granger <ged@FaerieMUD.org>
 
