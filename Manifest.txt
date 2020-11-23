@@ -8,6 +8,7 @@ lib/rake/deveiate/fixup.rb
 lib/rake/deveiate/gem_dep_finder.rb
 lib/rake/deveiate/gemspec.rb
 lib/rake/deveiate/generate.rb
+lib/rake/deveiate/git-refinements.rb
 lib/rake/deveiate/git.rb
 lib/rake/deveiate/hg.rb
 lib/rake/deveiate/packaging.rb
