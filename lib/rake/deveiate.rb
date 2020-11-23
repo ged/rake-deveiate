@@ -46,6 +46,9 @@ class Rake::DevEiate < Rake::TaskLib
 	# The version to use if one cannot be read from the source
 	DEFAULT_VERSION = '0.1.0'
 
+	# The prefix to use for release version tags by default
+	DEFAULT_RELEASE_TAG_PREFIX = 'v'
+
 	# Words in the package/gem name that should not be included in deriving paths,
 	# file names, etc.
 	PACKAGE_IGNORE_WORDS = %w[ruby]
@@ -158,6 +161,7 @@ class Rake::DevEiate < Rake::TaskLib
 		@licenses      = [ DEFAULT_LICENSE ]
 		@version_from  = env( :version_from, as_pathname: true ) ||
 			LIB_DIR + "%s.rb" % [ version_file_from(name) ]
+		@release_tag_prefix = DEFAULT_RELEASE_TAG_PREFIX
 
 		@docs_dir      = DOCS_DIR.dup
 
@@ -289,6 +293,10 @@ class Rake::DevEiate < Rake::TaskLib
 	# The version of Ruby required by this gem, in Gem version format.
 	attr_accessor :required_ruby_version
 
+	##
+	# The prefix to use for version tags
+	attr_accessor :release_tag_prefix
+
 
 	#
 	# Task definition
@@ -370,6 +378,11 @@ class Rake::DevEiate < Rake::TaskLib
 		desc "Set up the project for development"
 		task :setup do
 			self.install_dependencies
+		end
+
+		desc "Turn on maintainer mode: build with extra warnings and debugging"
+		task :maint do
+			ENV['MAINTAINER_MODE'] = 'yes'
 		end
 
 	end
@@ -529,6 +542,24 @@ class Rake::DevEiate < Rake::TaskLib
 			abort "Couldn't find a semantic version in %p" % [ version_line ]
 
 		return Gem::Version.new( version )
+	end
+
+
+	### Return a Regexp that matches the project's convention for versions.
+	def release_tag_pattern
+		prefix = self.release_tag_prefix
+		return /#{prefix}\d+(\.\d+)+/
+	end
+
+
+	### Fetch the list of the versions of releases that have entries in the history
+	### file.
+	def get_history_file_versions
+		tag_pattern = self.release_tag_pattern
+
+		return IO.readlines( self.history_file ).grep( tag_pattern ).map do |line|
+			line[ /^(?:h\d\.|#+|=+)\s+(#{tag_pattern})\s+/, 1 ]
+		end.compact
 	end
 
 
@@ -823,6 +854,31 @@ class Rake::DevEiate < Rake::TaskLib
 			split( /-/ ).
 			reject {|word| PACKAGE_IGNORE_WORDS.include?(word) }.
 			join( '/' )
+	end
+
+
+	### Delete the files in the given +filelist+ after confirming with the user.
+	def delete_extra_files( *filelist )
+		description = humanize_file_list( filelist, '	 ' )
+		self.prompt.say "Files to delete:"
+		self.prompt.say( description )
+
+		if self.prompt.yes?( "Really delete them?" ) {|q| q.default(false) }
+			filelist.each do |f|
+				rm_rf( f, verbose: true )
+			end
+		end
+	end
+
+
+	### Returns a human-scannable file list by joining and truncating the list if it's too long.
+	def humanize_file_list( list, indent=FILE_INDENT )
+		listtext = list[0..5].join( "\n#{indent}" )
+		if list.length > 5
+			listtext << " (and %d other/s)" % [ list.length - 5 ]
+		end
+
+		return listtext
 	end
 
 end # class Rake::DevEiate

@@ -78,6 +78,10 @@ module Rake::DevEiate::Extension
 		end
 
 		task :spec => :compile
+
+		task :maint do
+			ENV['V'] = 1
+		end
 	end
 
 
@@ -87,7 +91,6 @@ module Rake::DevEiate::Extension
 			dep.name == 'rake-compiler'
 		end
 	end
-
 
 
 	### Task function -- output debugging for extension tasks.
