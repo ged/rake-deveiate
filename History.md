@@ -2,6 +2,13 @@
 
 ---
 
+## v0.17.0 [2020-12-28] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Allow multi-level extension directory structure.
+
+
 ## v0.16.2 [2020-11-23] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
