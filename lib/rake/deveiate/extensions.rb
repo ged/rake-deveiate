@@ -74,7 +74,7 @@ module Rake::DevEiate::Extension
 
 		require 'rake/extensiontask'
 		self.extensions.each do |extconf|
-			Rake::ExtensionTask.new( extconf.pathmap('%-1d') )
+			Rake::ExtensionTask.new( extconf.pathmap('%{ext,}d') )
 		end
 
 		task :spec => :compile
@@ -98,14 +98,16 @@ module Rake::DevEiate::Extension
 		self.prompt.say( "Extension config scripts:", color: :bright_green )
 
 		if self.extensions.empty?
-			self.prompt.say( "None." )
+			self.prompt.say "None."
 		else
-			self.extensions.each do |path|
+			self.extensions.uniq.each do |path|
 				self.prompt.say "- %s" % [ path ]
 			end
 		end
 
 		if self.has_rakecompiler_dependency?
+			self.prompt.say "\n"
+			self.prompt.say "✔ has rake-compiler dependency"
 		end
 
 		self.prompt.say( "\n" )
