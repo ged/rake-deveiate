@@ -2,6 +2,13 @@
 
 ---
 
+## v0.17.1 [2020-12-28] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Update hglib dependency
+
+
 ## v0.17.0 [2020-12-28] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
