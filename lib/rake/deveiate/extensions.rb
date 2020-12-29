@@ -74,7 +74,7 @@ module Rake::DevEiate::Extension
 
 		require 'rake/extensiontask'
 		self.extensions.each do |extconf|
-			Rake::ExtensionTask.new( extconf.pathmap('%{ext,}d') )
+			Rake::ExtensionTask.new( extconf.pathmap('%{ext/,}d') )
 		end
 
 		task :spec => :compile
