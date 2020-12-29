@@ -2,6 +2,13 @@
 
 ---
 
+## v0.17.2 [2020-12-29] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Fix multi-directory extension directory support.
+
+
 ## v0.17.1 [2020-12-28] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
