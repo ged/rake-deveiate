@@ -80,7 +80,8 @@ module Rake::DevEiate::Extension
 		task :spec => :compile
 
 		task :maint do
-			ENV['V'] = 1
+			ENV['V'] = '1'
+			ENV['MAINTAINER_MODE'] = 'yes'
 		end
 	end
 
