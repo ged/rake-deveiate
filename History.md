@@ -2,6 +2,13 @@
 
 ---
 
+## v0.17.3 [2021-01-01] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Fix maintainer task of extensions lib.
+
+
 ## v0.17.2 [2020-12-29] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
