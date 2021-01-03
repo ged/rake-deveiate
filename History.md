@@ -2,6 +2,13 @@
 
 ---
 
+## v0.17.4 [2021-01-02] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Ignore prerelease tags when checking history file.
+
+
 ## v0.17.3 [2021-01-01] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
