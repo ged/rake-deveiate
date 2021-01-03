@@ -470,7 +470,7 @@ module Rake::DevEiate::Hg
 	### Fetch the list of names of tags that match the versioning scheme of this
 	### project.
 	def get_hg_version_tag_names
-		tag_pattern = self.release_tag_pattern
+		tag_pattern = /#{self.release_tag_pattern}$/
 		return self.hg.tags.map( &:name ).grep( tag_pattern )
 	end
 

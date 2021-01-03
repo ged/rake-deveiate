@@ -483,7 +483,7 @@ module Rake::DevEiate::Git
 	### Fetch the list of names of tags that match the versioning scheme of this
 	### project.
 	def get_git_version_tag_names
-		tag_pattern = self.release_tag_pattern
+		tag_pattern = /#{self.release_tag_pattern}$/
 		return self.git.tags.map( &:name ).grep( tag_pattern )
 	end
 
