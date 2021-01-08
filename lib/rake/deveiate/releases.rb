@@ -42,7 +42,10 @@ module Rake::DevEiate::Releases
 		gemserver = self.allowed_push_host || Rake::DevEiate::DEFAULT_GEMSERVER
 
 		if self.prompt.yes?( "Push a new gem to #{gemserver}?" ) {|q| q.default(false) }
-			sh( Gem.ruby, "-S", "gem", "push", self.gem_path.to_s )
+			push_args = [ "push", self.gem_path.to_s ]
+			push_args << '-k' << self.gem_push_key if self.gem_push_key
+
+			sh( Gem.ruby, "-S", "gem", *push_args )
 		end
 	end
 

@@ -286,6 +286,10 @@ class Rake::DevEiate < Rake::TaskLib
 	attr_accessor :allowed_push_host
 
 	##
+	# An alternative key to use for pushing gems (private gemserver)
+	attr_accessor :gem_push_key
+
+	##
 	# The rsync-compatible target to publish documentation to.
 	attr_accessor :publish_to
 
@@ -296,6 +300,10 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The prefix to use for version tags
 	attr_accessor :release_tag_prefix
+
+	##
+	# The name of the branch to release from
+	attr_accessor :release_branch
 
 
 	#

@@ -25,15 +25,25 @@ module Rake::DevEiate::Git
 	STATUS_COLORS = {
 		'M' => [:blue],                  # modified
 		'A' => [:bold, :green],          # added
-		'R' => [:bold, :black],          # removed
+		'D' => [:bold, :black],          # deleted
 		'C' => [:white],                 # clean
 		'!' => [:bold, :white, :on_red], # missing
 		'?' => [:yellow],                # not tracked
 		'I' => [:dim, :white],           # ignored
 	}
 
+	STATUS_DESCRIPTIONS = {
+		'M' => 'modified',
+		'D' => 'deleted',
+		'?' => 'untracked',
+		'A' => 'new',
+	}
+
 	# File indentation
 	FILE_INDENT = " • "
+
+	# The name of the branch releases should be created from
+	DEFAULT_RELEASE_BRANCH = 'master'
 
 
 	### Define version-control tasks
@@ -41,6 +51,8 @@ module Rake::DevEiate::Git
 		super if defined?( super )
 
 		return unless self.is_git_working_copy?
+
+		self.release_branch = DEFAULT_RELEASE_BRANCH
 
 		# :TODO: Should be refactored up with the same code in the hg lib.
 		file COMMIT_MSG_FILE.to_s do |task|
@@ -133,9 +145,17 @@ module Rake::DevEiate::Git
 
 	### The body of the git:prerelease task.
 	def do_git_prerelease( task, args )
-		uncommitted_files = self.git.status( n: true )
-		unless uncommitted_files.empty?
-			self.show_git_file_statuses( uncommitted_files )
+		if self.release_branch
+			current_branch = self.git.cmd( 'branch --show-current' )
+			unless self.release_branch == current_branch
+				self.prompt.warn "Releasing from a non-release branch (%s)." % [ current_branch ]
+				fail unless self.prompt.yes?( "Release anyway?" )
+			end
+		end
+
+		status = self.git.status
+		unless status.untracked.empty? && status.changed.empty?
+			self.show_git_file_statuses( status )
 
 			fail unless self.prompt.yes?( "Release anyway?" ) do |q|
 				q.default( false )
@@ -145,7 +165,7 @@ module Rake::DevEiate::Git
 		end
 
 		pkg_version_tag = self.current_git_version_tag
-		rev = self.git.identity.id
+		rev = self.git.revparse( 'HEAD' )
 
 		# Look for a tag for the current release version, and if it exists abort
 		if self.git.tags.find {|tag| tag.name == pkg_version_tag }
@@ -155,35 +175,17 @@ module Rake::DevEiate::Git
 
 		# Tag the current rev
 		self.prompt.ok "Tagging rev %s as %s" % [ rev, pkg_version_tag ]
-		self.git.tag( pkg_version_tag, rev: rev )
-
-		# Sign the tag
-		if self.git.extension_enabled?( :gpg )
-			if self.prompt.yes?( "Sign %s?" % [pkg_version_tag] )
-				self.git.sign( pkg_version_tag, message: "Signing %s" % [pkg_version_tag] )
-			end
-		end
+		self.git.cmd "tag -s -m 'Tagging for release %s' %s %s" %
+			[ pkg_version_tag, pkg_version_tag, rev ]
 	end
 
 
 	### The body of the git:postrelease task.
 	def do_git_postrelease( task, args )
-		if self.git.status( 'checksum', unknown: true ).any?
+		if self.git.status.untracked.keys.any? {|path| path.start_with?('checksum/') }
 			self.prompt.say "Adding release artifacts..."
 			self.git.add( 'checksum' )
-			self.git.commit( 'checksum', message: "Adding release checksum." )
-		end
-
-		if self.prompt.yes?( "Move released changesets to public phase?" )
-			self.prompt.say "Publicising changesets..."
-			self.git.phase( public: true )
-		end
-
-		if self.git.extension_enabled?( :topic )
-			current_topic = self.git.topic
-			if current_topic && self.prompt.yes?( "Clear the current topic (%s)?" %[current_topic] )
-				self.git.topic( clear: true )
-			end
+			self.git.commit( "Adding release checksum." )
 		end
 
 		Rake::Task['git:push'].invoke
@@ -371,7 +373,7 @@ module Rake::DevEiate::Git
 		header_char = self.header_char_for( self.history_file )
 		ext = self.history_file.extname
 		log_entries = if previous_tag
-				self.git.log( rev: "#{previous_tag}~-2::" )
+				self.git.log.between( previous_tag )
 			else
 				self.git.log
 			end
@@ -455,11 +457,14 @@ module Rake::DevEiate::Git
 	### Given a +status_hash+ like that returned by Git::Repo.status, return a
 	### string description of the files and their status.
 	def show_git_file_statuses( statuses )
-		lines = statuses.map do |entry|
-			status_color = STATUS_COLORS[ entry.status ]
+		entries = statuses.select( &:type ) + statuses.untracked.values
+
+		lines = entries.map do |entry|
+			status = entry.type || '?'
+			status_color = STATUS_COLORS[ status ]
 			"	%s: %s" % [
-				self.pastel.white( entry.path.to_s ),
-				self.pastel.decorate( entry.status_description, *status_color ),
+				self.pastel.bold.white( entry.path.to_s ),
+				self.pastel.decorate( STATUS_DESCRIPTIONS[status], *status_color ),
 			]
 		end
 

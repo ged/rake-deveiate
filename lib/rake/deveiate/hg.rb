@@ -32,12 +32,19 @@ module Rake::DevEiate::Hg
 	# File indentation
 	FILE_INDENT = " • "
 
+	# The name of the branch releases should be created from
+	DEFAULT_RELEASE_BRANCH = 'default'
+
 
 	### Define version-control tasks
 	def define_tasks
 		super if defined?( super )
 
 		return unless self.is_hg_working_copy?
+
+		# :TODO: Actually check for this? Doesn't make much as much sense given my
+		# Mercurial workflow.
+		self.release_branch = DEFAULT_RELEASE_BRANCH
 
 		file COMMIT_MSG_FILE.to_s do |task|
 			commit_log = Pathname( task.name )
