@@ -302,7 +302,7 @@ module Rake::DevEiate::Git
 					end
 				end
 
-				git.push( 'origin', git.current_branch )
+				git.push( 'origin', git.current_branch, tags: true )
 				self.prompt.ok "Done."
 			else
 				abort
