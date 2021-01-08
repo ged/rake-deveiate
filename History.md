@@ -2,6 +2,15 @@
 
 ---
 
+## v0.18.0 [2021-01-07] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Add gem push key setting
+- Add release branch check
+- Fix a bunch of git functionality
+
+
 ## v0.17.4 [2021-01-02] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
