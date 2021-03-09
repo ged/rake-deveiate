@@ -12,6 +12,9 @@ gem 'tty-editor', '~> 0.6'
 gem 'tty-table', '~> 0.11'
 gem 'pastel', '~> 0.7'
 gem 'git', '~> 1.7'
+gem 'net-scp', '~> 3.0'
+gem 'ed25519', '~> 1.2'
+gem 'bcrypt_pbkdf', '~> 1.1'
 
 group :development do
 	gem 'rdoc-generator-fivefish', '~> 0.4'

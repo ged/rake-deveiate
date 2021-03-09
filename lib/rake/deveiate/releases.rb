@@ -41,11 +41,37 @@ module Rake::DevEiate::Releases
 	def do_release_gem( task, args )
 		gemserver = self.allowed_push_host || Rake::DevEiate::DEFAULT_GEMSERVER
 
+		case gemserver
+		when /\Ascp:/
+			self.do_scp_push( gemserver )
+		else
+			self.do_gem_push( gemserver )
+		end
+	end
+
+
+	### Push a new gem via a gemserver.
+	def do_gem_push( gemserver )
 		if self.prompt.yes?( "Push a new gem to #{gemserver}?" ) {|q| q.default(false) }
 			push_args = [ "push", self.gem_path.to_s ]
 			push_args << '-k' << self.gem_push_key if self.gem_push_key
 
 			sh( Gem.ruby, "-S", "gem", *push_args )
+		end
+	end
+
+
+	### Push a new gem via scp.
+	def do_scp_push( gemserver )
+		gemserver_url = URI( gemserver )
+
+		if self.prompt.yes?( "Push a new gem with scp to #{gemserver_url.host}?" ) {|q| q.default(false) }
+			require 'net/scp'
+
+			# Strip off one leading '/' if one is present
+			remote_path = gemserver_url.path[ %r{/(.*)}, 1 ]
+
+			Net::SCP.upload!( gemserver_url.host, gemserver_url.user, self.gem_path.to_s, remote_path )
 		end
 	end
 
