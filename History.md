@@ -1,6 +1,16 @@
 # Release History for rake-deveiate
 
 ---
+## v0.19.0 [2021-03-08] Michael Granger <ged@FaerieMUD.org>
+
+Enhancements:
+
+- Add support for SCP gem pushing.
+
+Bugfixes:
+
+- Push git repos with tags.
+
 
 ## v0.18.0 [2021-01-07] Michael Granger <ged@FaerieMUD.org>
 
