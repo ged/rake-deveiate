@@ -1,6 +1,13 @@
 # Release History for rake-deveiate
 
 ---
+## v0.19.1 [2021-05-08] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Fix version and version_from.
+
+
 ## v0.19.0 [2021-03-08] Michael Granger <ged@FaerieMUD.org>
 
 Enhancements:
