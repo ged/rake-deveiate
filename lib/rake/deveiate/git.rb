@@ -132,7 +132,7 @@ module Rake::DevEiate::Git
 
 		task :debug => 'git:debug'
 	rescue ::Exception => err
-		$stderr.puts "%s while defining Git tasks: %s" % [ err.class.name, err.message ]
+		$stderr.puts "%s while defining Git tasks: %s" % [ err.class.name, err.full_message(order: :bottom) ]
 		raise
 	end
 

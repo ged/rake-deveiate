@@ -212,11 +212,6 @@ class Rake::DevEiate < Rake::TaskLib
 	attr_accessor :summary
 
 	##
-	# The Gem::Version of the current library, extracted from the top-level
-	# namespace.
-	attr_reader :version
-
-	##
 	# The README of the project as an RDoc::Markup::Document
 	attr_accessor :readme
 
@@ -453,7 +448,7 @@ class Rake::DevEiate < Rake::TaskLib
 
 	### Extract a summary from the README if possible. Returns +nil+ if not.
 	def extract_summary
-		return self.description.split( /(?<=\.)\s+/ ).first.gsub( /\n/, ' ' )
+		return self.description.split( /(?<=\.)\s+/ ).first&.gsub( /\n/, ' ' )
 	end
 
 
@@ -482,7 +477,8 @@ class Rake::DevEiate < Rake::TaskLib
 		content = readme.parts.grep_v( RDoc::Markup::BlankLine )
 
 		heading, list = content.each_cons( 2 ).find do |heading, list|
-			heading.is_a?( RDoc::Markup::Heading ) && heading.text =~ /^authors?/i &&
+			heading.is_a?( RDoc::Markup::Heading ) &&
+				heading.text =~ /^(author|maintainer)s?/i &&
 				list.is_a?( RDoc::Markup::List )
 		end
 
@@ -801,6 +797,10 @@ class Rake::DevEiate < Rake::TaskLib
 		else
 			self.prompt.say( table.render(:unicode, padding: [0,1]) )
 		end
+		self.prompt.say( "\n" )
+
+		self.prompt.say( "Version from:" )
+		self.prompt.say( "  " + self.version_from.to_s, color: :bold )
 		self.prompt.say( "\n" )
 	end
 
