@@ -30,7 +30,7 @@ using Rake::DevEiate::GitRefinements
 #  /Users/ged/.rvm/gems/ruby-2.7.3@ravn/bin/ruby_executable_hooks:22:in `<main>'
 #  Tasks: TOP => ci => checkin => precheckin => git:precheckin => git:pull
 #  (See full trace by running task with --trace)
-#  
+#
 module Rake::DevEiate::Git
 
 	# The name of the file to edit for the commit message

@@ -1,6 +1,15 @@
 # Release History for rake-deveiate
 
 ---
+
+## v0.19.2 [2021-07-15] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Defer gem path until version_from has a chance to be defined
+
+
+
 ## v0.19.1 [2021-05-08] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
