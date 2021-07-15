@@ -106,7 +106,7 @@ class Rake::DevEiate < Rake::TaskLib
 		.svg
 	]
 
-	# The path to the data directory for the Prestigio library.
+	# The path to the data directory
 	DEVEIATE_DATADIR = if ENV['DEVEIATE_DATADIR']
 			Pathname( ENV['DEVEIATE_DATADIR'] )
 		elsif Gem.loaded_specs['rake-deveiate'] &&

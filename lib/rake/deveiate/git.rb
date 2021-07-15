@@ -13,6 +13,24 @@ using Rake::DevEiate::GitRefinements
 
 
 # Git version-control tasks
+#
+# :TODO:
+# - Handle `ci` when on a branch that isn't yet published. Currently it does:
+#
+#  Pull and update from 'git@github.com:RavnGroup/ravn.git'? Yes
+#  Fetching...
+#  Pulling...
+#  rake aborted!
+#  Git::GitExecuteError: git '--git-dir=/Users/ged/source/ravn/ravn/.git'
+#    '--work-tree=/Users/ged/source/ravn/ravn' '-c' 'color.ui=false' pull
+#    'origin' '<branchname>' 2>&1:fatal: couldn't find remote ref
+#    <branchname>
+#  /Users/ged/.rvm/gems/ruby-2.7.3@ravn/gems/rake-13.0.3/exe/rake:27:in `<top (required)>'
+#  /Users/ged/.rvm/gems/ruby-2.7.3@ravn/bin/ruby_executable_hooks:22:in `eval'
+#  /Users/ged/.rvm/gems/ruby-2.7.3@ravn/bin/ruby_executable_hooks:22:in `<main>'
+#  Tasks: TOP => ci => checkin => precheckin => git:precheckin => git:pull
+#  (See full trace by running task with --trace)
+#  
 module Rake::DevEiate::Git
 
 	# The name of the file to edit for the commit message

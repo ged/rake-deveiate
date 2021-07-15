@@ -14,10 +14,8 @@ module Rake::DevEiate::Packaging
 	def setup( name, **options )
 		super if defined?( super )
 
-		gem_basename = "%s-%s" % [ name, self.version ]
-
-		@gem_filename = gem_basename + '.gem'
-		@gem_path     = Rake::DevEiate::PKG_DIR + @gem_filename
+		@gem_filename = nil
+		@gem_path     = nil
 	end
 
 	##
@@ -31,6 +29,10 @@ module Rake::DevEiate::Packaging
 
 	### Set up packaging tasks.
 	def define_tasks
+		gem_basename = "%s-%s" % [ name, self.version ]
+		@gem_filename = gem_basename + '.gem'
+		@gem_path     = Rake::DevEiate::PKG_DIR + @gem_filename
+
 		super if defined?( super )
 
 		task :release_gem => :gem
