@@ -128,7 +128,8 @@ module Rake::DevEiate::Generate
 	### Task body for the `diff_manifest` task
 	def do_diff_manifest( task, args )
 		Tempfile.open( ['Manifest','.txt'], Rake::DevEiate::PROJECT_DIR ) do |io|
-			file_list = self.default_manifest.to_a
+			file_list = self.default_manifest.to_a.sort
+
 			io.puts( *file_list )
 			io.flush
 

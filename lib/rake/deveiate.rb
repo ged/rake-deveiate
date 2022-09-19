@@ -40,6 +40,9 @@ class Rake::DevEiate < Rake::TaskLib
 	# The server to release to by default
 	DEFAULT_GEMSERVER = 'https://rubygems.org/'
 
+	# What to use for the homepage if none is set
+	DEFAULT_HOMEPAGE = 'https://example.com/'
+
 	# The description to use if none is set
 	DEFAULT_DESCRIPTION = "A gem of some sort."
 
@@ -173,6 +176,8 @@ class Rake::DevEiate < Rake::TaskLib
 		@dependencies  = self.find_dependencies
 		@extensions    = Rake::FileList.new
 
+		@default_manifest = DEFAULT_PROJECT_FILES.dup
+
 		@version       = nil
 		@publish_to    = nil
 		@required_ruby_version = nil
@@ -299,6 +304,11 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The name of the branch to release from
 	attr_accessor :release_branch
+
+	##
+	# The Rake::FileList that's used in lieu of the manifest file if it
+	# isn't present.
+	attr_accessor :default_manifest
 
 
 	#
@@ -587,13 +597,6 @@ class Rake::DevEiate < Rake::TaskLib
 	end
 
 
-	### Return the Rake::FileList that's used in lieu of the manifest file if it
-	### isn't present.
-	def default_manifest
-		return DEFAULT_PROJECT_FILES.dup
-	end
-
-
 	### Make a Rake::FileList of the files that should be used to generate
 	### documentation.
 	def make_rdoc_filelist
@@ -769,7 +772,7 @@ class Rake::DevEiate < Rake::TaskLib
 	def output_documentation_debugging
 		summary = self.extract_summary
 		description = self.extract_description
-		homepage = self.extract_homepage
+		homepage = self.extract_homepage || DEFAULT_HOMEPAGE
 
 		self.prompt.say( "Documentation", color: :bright_green )
 		self.prompt.say( "Authors:" )
