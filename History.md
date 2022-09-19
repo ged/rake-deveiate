@@ -1,6 +1,16 @@
 # Release History for rake-deveiate
 
 ---
+## v0.20.0 [2022-09-19] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Allow default manifest to be modified
+
+Bugfixes:
+
+- Add missing homepage constant
+
 
 ## v0.19.2 [2021-07-15] Michael Granger <ged@FaerieMUD.org>
 
