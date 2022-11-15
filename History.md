@@ -1,6 +1,15 @@
 # Release History for rake-deveiate
 
 ---
+
+## v0.21.0 [2022-11-14] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Only include plain files in the manifest
+- Allow declaration of alternative RDoc generator
+
+
 ## v0.20.0 [2022-09-19] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
