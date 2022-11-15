@@ -149,37 +149,38 @@ class Rake::DevEiate < Rake::TaskLib
 
 	### Create the devEiate tasks for a gem with the given +name+.
 	def initialize( name, **options, &block )
-		@name          = validate_gemname( name )
-		@options       = options
+		@name                  = validate_gemname( name )
+		@options               = options
 
-		@rakefile      = PROJECT_DIR + 'Rakefile'
-		@manifest_file = DEFAULT_MANIFEST_FILE.dup
-		@project_files = self.read_manifest
-		@executables   = self.find_executables
-		@readme_file   = self.find_readme
-		@history_file  = self.find_history_file
-		@readme        = self.parse_readme
-		@rdoc_files    = self.make_rdoc_filelist
-		@cert_files    = Rake::FileList[ CERTS_DIR + '*.pem' ]
-		@licenses      = [ DEFAULT_LICENSE ]
-		@version_from  = env( :version_from, as_pathname: true ) ||
+		@rakefile              = PROJECT_DIR + 'Rakefile'
+		@manifest_file         = DEFAULT_MANIFEST_FILE.dup
+		@project_files         = self.read_manifest
+		@executables           = self.find_executables
+		@readme_file           = self.find_readme
+		@history_file          = self.find_history_file
+		@readme                = self.parse_readme
+		@rdoc_files            = self.make_rdoc_filelist
+		@rdoc_generator        = :fivefish
+		@cert_files            = Rake::FileList[ CERTS_DIR + '*.pem' ]
+		@licenses              = [ DEFAULT_LICENSE ]
+		@version_from          = env( :version_from, as_pathname: true ) ||
 			LIB_DIR + "%s.rb" % [ version_file_from(name) ]
-		@release_tag_prefix = DEFAULT_RELEASE_TAG_PREFIX
+		@release_tag_prefix    = DEFAULT_RELEASE_TAG_PREFIX
 
-		@docs_dir      = DOCS_DIR.dup
+		@docs_dir              = DOCS_DIR.dup
 
-		@title         = self.extract_default_title
-		@authors       = self.extract_authors
-		@homepage      = self.extract_homepage
-		@description   = self.extract_description || DEFAULT_DESCRIPTION
-		@summary       = nil
-		@dependencies  = self.find_dependencies
-		@extensions    = Rake::FileList.new
+		@title                 = self.extract_default_title
+		@authors               = self.extract_authors
+		@homepage              = self.extract_homepage
+		@description           = self.extract_description || DEFAULT_DESCRIPTION
+		@summary               = nil
+		@dependencies          = self.find_dependencies
+		@extensions            = Rake::FileList.new
 
-		@default_manifest = DEFAULT_PROJECT_FILES.dup
+		@default_manifest      = DEFAULT_PROJECT_FILES.dup
 
-		@version       = nil
-		@publish_to    = nil
+		@version               = nil
+		@publish_to            = nil
 		@required_ruby_version = nil
 
 		super()
@@ -255,6 +256,11 @@ class Rake::DevEiate < Rake::TaskLib
 	##
 	# The files which should be used to generate documentation as a Rake::FileList
 	attr_accessor :rdoc_files
+
+	##
+	# The name of the RDoc generator to use (assumes any necessary dependencies are
+	# installed)
+	attr_accessor :rdoc_generator
 
 	##
 	# The public cetificates that can be used to verify signed gems

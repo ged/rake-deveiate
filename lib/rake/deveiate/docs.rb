@@ -22,7 +22,7 @@ module Rake::DevEiate::Docs
 		RDoc::Task.new( 'docs' ) do |rdoc|
 			rdoc.main = self.readme_file.to_s
 			rdoc.rdoc_files = self.rdoc_files
-			rdoc.generator = :fivefish
+			rdoc.generator = self.rdoc_generator
 			rdoc.title = self.title
 			rdoc.rdoc_dir = Rake::DevEiate::DOCS_DIR.to_s
 		end
