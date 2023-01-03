@@ -391,7 +391,7 @@ module Rake::DevEiate::Git
 		header_char = self.header_char_for( self.history_file )
 		ext = self.history_file.extname
 		log_entries = if previous_tag
-				self.git.log.between( previous_tag )
+				self.git.log.between( previous_tag, 'HEAD' )
 			else
 				self.git.log
 			end
