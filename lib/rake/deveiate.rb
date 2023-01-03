@@ -160,7 +160,7 @@ class Rake::DevEiate < Rake::TaskLib
 		@history_file          = self.find_history_file
 		@readme                = self.parse_readme
 		@rdoc_files            = self.make_rdoc_filelist
-		@rdoc_generator        = :fivefish
+		@rdoc_generator        = :sixfish
 		@cert_files            = Rake::FileList[ CERTS_DIR + '*.pem' ]
 		@licenses              = [ DEFAULT_LICENSE ]
 		@version_from          = env( :version_from, as_pathname: true ) ||

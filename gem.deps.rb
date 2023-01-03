@@ -17,6 +17,6 @@ gem 'ed25519', '~> 1.2'
 gem 'bcrypt_pbkdf', '~> 1.1'
 
 group :development do
-	gem 'rdoc-generator-fivefish', '~> 0.4'
+	gem 'rdoc-generator-sixfish', '~> 0.3'
 end
 
