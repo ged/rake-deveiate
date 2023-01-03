@@ -1,6 +1,16 @@
 # Release History for rake-deveiate
 
 ---
+## v0.22.0 [2023-01-02] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Make Sixfish the default RDoc generator
+
+Bugfixes:
+
+- Fix diffing for the history file under Git
+
 
 ## v0.21.0 [2022-11-14] Michael Granger <ged@FaerieMUD.org>
 
