@@ -1,6 +1,14 @@
 # Release History for rake-deveiate
 
 ---
+## v0.23.0 [2023-05-25] Michael Granger <ged@FaerieMUD.org>
+
+Bugfixes:
+
+- Update gem-signing cert, dependencies
+- Fix breaking change in git gem
+
+
 ## v0.22.0 [2023-01-02] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
