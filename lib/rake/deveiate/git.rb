@@ -164,7 +164,7 @@ module Rake::DevEiate::Git
 	### The body of the git:prerelease task.
 	def do_git_prerelease( task, args )
 		if self.release_branch
-			current_branch = self.git.cmd( 'branch --show-current' )
+			current_branch = self.git.cmd( 'branch', '--show-current' )
 			unless self.release_branch == current_branch
 				self.prompt.warn "Releasing from a non-release branch (%s)." % [ current_branch ]
 				fail unless self.prompt.yes?( "Release anyway?" )
@@ -193,8 +193,8 @@ module Rake::DevEiate::Git
 
 		# Tag the current rev
 		self.prompt.ok "Tagging rev %s as %s" % [ rev, pkg_version_tag ]
-		self.git.cmd "tag -s -m 'Tagging for release %s' %s %s" %
-			[ pkg_version_tag, pkg_version_tag, rev ]
+		self.git.cmd( 'tag', '-s', '-m', "Tagging for release #{pkg_version_tag}",
+			 pkg_version_tag, rev )
 	end
 
 
@@ -316,7 +316,7 @@ module Rake::DevEiate::Git
 				unless git.is_remote_branch?( git.current_branch )
 					if self.prompt.yes?( "Create tracking branch?" ) {|q| q.default(true) }
 						tracking_branch = "origin/%s" % [ git.current_branch ]
-						git.cmd( 'branch', ['-u', tracking_branch] )
+						git.cmd( 'branch', '-u', tracking_branch )
 					end
 				end
 

@@ -13,14 +13,14 @@ require 'rake/deveiate' unless defined?( Rake::DevEiate )
 module Rake::DevEiate::GitRefinements
 
 	refine Git::Base do
-		def cmd( cmd )
-			self.lib.cmd( cmd )
+		def cmd( *cmd )
+			self.lib.cmd( *cmd )
 		end
 	end
 
 	refine Git::Lib do
-		def cmd( cmd )
-			command( cmd )
+		def cmd( *cmd )
+			command( *cmd )
 		end
 	end
 
