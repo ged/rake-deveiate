@@ -1,6 +1,13 @@
 # Release History for rake-deveiate
 
 ---
+## v0.24.0 [2024-04-25] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Update dependencies for newer Rubies
+
+
 ## v0.23.0 [2023-05-25] Michael Granger <ged@FaerieMUD.org>
 
 Bugfixes:
