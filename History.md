@@ -1,6 +1,13 @@
 # Release History for rake-deveiate
 
 ---
+## v0.25.0 [2024-07-31] Michael Granger <ged@FaerieMUD.org>
+
+Improvements:
+
+- Use annotated tags for git repos
+
+
 ## v0.24.0 [2024-04-25] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
