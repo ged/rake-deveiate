@@ -193,7 +193,7 @@ module Rake::DevEiate::Git
 
 		# Tag the current rev
 		self.prompt.ok "Tagging rev %s as %s" % [ rev, pkg_version_tag ]
-		self.git.cmd( 'tag', '-s', '-m', "Tagging for release #{pkg_version_tag}",
+		self.git.cmd( 'tag', '-as', '-m', "Tagging for release #{pkg_version_tag}",
 			 pkg_version_tag, rev )
 	end
 
