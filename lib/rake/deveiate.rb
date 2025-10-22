@@ -152,6 +152,8 @@ class Rake::DevEiate < Rake::TaskLib
 		@name                  = validate_gemname( name )
 		@options               = options
 
+		@default_manifest      = DEFAULT_PROJECT_FILES.dup
+
 		@rakefile              = PROJECT_DIR + 'Rakefile'
 		@manifest_file         = DEFAULT_MANIFEST_FILE.dup
 		@project_files         = self.read_manifest
@@ -176,8 +178,6 @@ class Rake::DevEiate < Rake::TaskLib
 		@summary               = nil
 		@dependencies          = self.find_dependencies
 		@extensions            = Rake::FileList.new
-
-		@default_manifest      = DEFAULT_PROJECT_FILES.dup
 
 		@version               = nil
 		@publish_to            = nil
