@@ -251,7 +251,7 @@ module Rake::DevEiate::Gemspec
 
 	### Return a version string
 	def prerelease_version
-		return "#{self.version.bump}.0.pre.#{Time.now.strftime("%Y%m%d%H%M%S")}"
+		return "#{self.version.bump}.0-#{Time.now.strftime("%Y%m%d%H%M%S")}"
 	end
 
 
