@@ -1,6 +1,11 @@
 # Release History for rake-deveiate
 
 ---
+## v0.26.0 [2026-04-06] Michael Granger <ged@FaerieMUD.org>
+
+- Add rubygems-datadir to work around senseless deprecation
+
+
 ## v0.25.0 [2024-07-31] Michael Granger <ged@FaerieMUD.org>
 
 Improvements:
