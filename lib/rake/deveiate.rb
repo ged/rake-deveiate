@@ -24,7 +24,10 @@ require 'rdoc/markdown'
 require 'tty/prompt'
 require 'tty/table'
 require 'pastel'
+require 'rubygems/datadir'
 require 'rubygems/request_set'
+
+using Gem::DataDirRefinements
 
 
 # A task library for maintaining an open-source library.

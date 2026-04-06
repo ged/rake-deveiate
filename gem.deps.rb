@@ -15,6 +15,7 @@ gem 'git', '~> 1.19'
 gem 'net-scp', '~> 4.0'
 gem 'ed25519', '~> 1.3'
 gem 'bcrypt_pbkdf', '~> 1.1'
+gem 'rubygems-datadir', '~> 0.0'
 
 group :development do
 	gem 'rdoc-generator-sixfish', '~> 0.3'
