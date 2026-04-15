@@ -2,8 +2,8 @@
 
 source 'https://rubygems.org'
 
-gem 'rake', '~> 13.0'
-gem 'rdoc', '~> 6.6'
+gem 'rake', '~> 13.4'
+gem 'rdoc', '~> 7.0'
 gem 'rspec', '~> 3.13'
 gem 'simplecov', '~> 0.22'
 gem 'hglib', '~> 0.11'
